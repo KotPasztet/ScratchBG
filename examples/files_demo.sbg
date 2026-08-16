@@ -1,0 +1,11 @@
+import "../packages/std/main.sbg";
+
+on action(input) {
+    printHeader("FILES DEMO");
+    log(join("count=", fileCount()));
+    log(join("exists=", fileExists("config.txt")));
+    log(join("size=", fileSize("config.txt")));
+    log(join("line1=", fileReadLine("config.txt", 1)));
+    log(join("has vanilla=", fileContains("config.txt", "vanilla")));
+    return fileReadAll("config.txt");
+}

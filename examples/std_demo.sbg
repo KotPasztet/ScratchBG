@@ -1,0 +1,42 @@
+import "../packages/std/main.sbg";
+
+stage {
+    on action(input) {
+        consoleClear();
+        printHeader("STD DEMO");
+
+        if (input == "math") {
+            return join("clamp=", clamp(120, 0, 100));
+        }
+        if (startsWith(input, "echo ")) {
+            return slice(input, 6, len(input));
+        }
+        if (input == "worker") {
+            broadcast("worker.step");
+            return "worker broadcasted";
+        }
+        return join("unknown: ", input);
+    }
+}
+
+sprite Worker {
+    import "../packages/std/main.sbg";
+    import "../packages/std/sprite.sbg";
+    let ticks = 0;
+
+    on flag {
+        hide();
+        goToXY(0, 0);
+    }
+
+    proc step() {
+        ticks += 1;
+        changeX(10);
+        changeY(5);
+        return join("tick=", join(ticks, join(" pos=", join(x(), join(",", y())))));
+    }
+
+    on message "worker.step" {
+        printInfo(step());
+    }
+}

@@ -1,0 +1,165 @@
+// Min-priority queue and max-priority queue implemented on vanilla Scratch lists.
+// Global containers by design: Scratch custom blocks cannot accept list references.
+// Pair format: priority + value, like priority_queue<pair<priority,value>>.
+
+list pq_priority = [];
+list pq_value = [];
+let pq_pop_priority = 0;
+let pq_pop_value = 0;
+let pq_error = "";
+
+proc pqClear() {
+    clearList(pq_priority);
+    clearList(pq_value);
+    pq_pop_priority = 0;
+    pq_pop_value = 0;
+    pq_error = "";
+    return 0;
+}
+
+proc pqSize() { return len(pq_priority); }
+proc pqEmpty() { return len(pq_priority) == 0; }
+proc pqTopPriority() {
+    if (pqEmpty()) { pq_error = "empty priority_queue"; return 0; }
+    pq_error = "";
+    return item(pq_priority, 1);
+}
+proc pqTopValue() {
+    if (pqEmpty()) { pq_error = "empty priority_queue"; return 0; }
+    pq_error = "";
+    return item(pq_value, 1);
+}
+
+proc pqSwap(i, j) {
+    let p = item(pq_priority, i);
+    let v = item(pq_value, i);
+    setItem(pq_priority, i, item(pq_priority, j));
+    setItem(pq_value, i, item(pq_value, j));
+    setItem(pq_priority, j, p);
+    setItem(pq_value, j, v);
+    return 1;
+}
+
+proc pqPush(priority, value) {
+    push(pq_priority, priority);
+    push(pq_value, value);
+    let i = len(pq_priority);
+    while (i > 1) {
+        let parent = floor(i / 2);
+        if (item(pq_priority, parent) <= item(pq_priority, i)) { break; }
+        pqSwap(parent, i);
+        i = parent;
+    }
+    return len(pq_priority);
+}
+
+proc pqPop() {
+    if (pqEmpty()) {
+        pq_error = "empty priority_queue";
+        pq_pop_priority = 0;
+        pq_pop_value = 0;
+        return 0;
+    }
+    pq_pop_priority = item(pq_priority, 1);
+    pq_pop_value = item(pq_value, 1);
+    let last = len(pq_priority);
+    setItem(pq_priority, 1, item(pq_priority, last));
+    setItem(pq_value, 1, item(pq_value, last));
+    deleteLast(pq_priority);
+    deleteLast(pq_value);
+    let i = 1;
+    while (1) {
+        let left = i * 2;
+        let right = left + 1;
+        let best = i;
+        if (left <= len(pq_priority) && item(pq_priority, left) < item(pq_priority, best)) { best = left; }
+        if (right <= len(pq_priority) && item(pq_priority, right) < item(pq_priority, best)) { best = right; }
+        if (best == i) { break; }
+        pqSwap(i, best);
+        i = best;
+    }
+    pq_error = "";
+    return 1;
+}
+
+// Max-priority queue.
+list maxpq_priority = [];
+list maxpq_value = [];
+let maxpq_pop_priority = 0;
+let maxpq_pop_value = 0;
+let maxpq_error = "";
+
+proc maxpqClear() { clearList(maxpq_priority); clearList(maxpq_value); return 0; }
+proc maxpqSize() { return len(maxpq_priority); }
+proc maxpqEmpty() { return len(maxpq_priority) == 0; }
+proc maxpqTopPriority() { if (maxpqEmpty()) { return 0; } return item(maxpq_priority, 1); }
+proc maxpqTopValue() { if (maxpqEmpty()) { return 0; } return item(maxpq_value, 1); }
+
+proc maxpqSwap(i, j) {
+    let p = item(maxpq_priority, i);
+    let v = item(maxpq_value, i);
+    setItem(maxpq_priority, i, item(maxpq_priority, j));
+    setItem(maxpq_value, i, item(maxpq_value, j));
+    setItem(maxpq_priority, j, p);
+    setItem(maxpq_value, j, v);
+    return 1;
+}
+
+proc maxpqPush(priority, value) {
+    push(maxpq_priority, priority);
+    push(maxpq_value, value);
+    let i = len(maxpq_priority);
+    while (i > 1) {
+        let parent = floor(i / 2);
+        if (item(maxpq_priority, parent) >= item(maxpq_priority, i)) { break; }
+        maxpqSwap(parent, i);
+        i = parent;
+    }
+    return len(maxpq_priority);
+}
+
+proc maxpqPop() {
+    if (maxpqEmpty()) { maxpq_error = "empty priority_queue"; return 0; }
+    maxpq_pop_priority = item(maxpq_priority, 1);
+    maxpq_pop_value = item(maxpq_value, 1);
+    let last = len(maxpq_priority);
+    setItem(maxpq_priority, 1, item(maxpq_priority, last));
+    setItem(maxpq_value, 1, item(maxpq_value, last));
+    deleteLast(maxpq_priority);
+    deleteLast(maxpq_value);
+    let i = 1;
+    while (1) {
+        let left = i * 2;
+        let right = left + 1;
+        let best = i;
+        if (left <= len(maxpq_priority) && item(maxpq_priority, left) > item(maxpq_priority, best)) { best = left; }
+        if (right <= len(maxpq_priority) && item(maxpq_priority, right) > item(maxpq_priority, best)) { best = right; }
+        if (best == i) { break; }
+        maxpqSwap(i, best);
+        i = best;
+    }
+    maxpq_error = "";
+    return 1;
+}
+
+// C++-style aliases.  StageBG has no classes/templates, so this is a global
+// min-priority queue named like a compact STL surface.
+proc pq_clear() { return pqClear(); }
+proc pq_size() { return pqSize(); }
+proc pq_empty() { return pqEmpty(); }
+proc pq_push(priority, value) { return pqPush(priority, value); }
+proc pq_pop() { return pqPop(); }
+proc pq_top() { return pqTopValue(); }
+proc pq_top_key() { return pqTopPriority(); }
+proc pq_popped() { return pq_pop_value; }
+proc pq_popped_key() { return pq_pop_priority; }
+
+proc maxpq_clear() { return maxpqClear(); }
+proc maxpq_size() { return maxpqSize(); }
+proc maxpq_empty() { return maxpqEmpty(); }
+proc maxpq_push(priority, value) { return maxpqPush(priority, value); }
+proc maxpq_pop() { return maxpqPop(); }
+proc maxpq_top() { return maxpqTopValue(); }
+proc maxpq_top_key() { return maxpqTopPriority(); }
+proc maxpq_popped() { return maxpq_pop_value; }
+proc maxpq_popped_key() { return maxpq_pop_priority; }

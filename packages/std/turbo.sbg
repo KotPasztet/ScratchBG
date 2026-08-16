@@ -1,0 +1,23 @@
+// Turbo policy helpers. Vanilla Scratch cannot persist editor-level Turbo Mode
+// in an .sb3, so StageBG uses warp custom blocks and compiler-side lowering.
+
+proc enableTurbo() {
+    turboOn();
+    return 1;
+}
+
+proc disableTurboFlag() {
+    // Does not rewrite Scratch VM speed at runtime; it only changes StageBG's flag.
+    turboOff();
+    return 0;
+}
+
+proc turboEnabled() {
+    return isTurbo();
+}
+
+proc hotLoopStart() {
+    // Use this at the start of manually written forever/game loops.
+    tick();
+    return dt();
+}

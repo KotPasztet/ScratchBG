@@ -1,0 +1,29 @@
+import "std";
+
+list xs = [5, 1, 4, 2, 3];
+
+on action(input) {
+    let sum = 0;
+
+    for (let x in xs) {
+        sum += x;
+    }
+
+    let indexed = "";
+    for (let i, x in xs) {
+        indexed = join(indexed, join("[", join(i, join(":", join(x, "]")))));
+    }
+
+    let squares = 0;
+    for (let i in range(1, 6)) {
+        squares += i * i;
+    }
+
+    sortAsc(xs);
+    let sorted = "";
+    for (let x in xs) {
+        sorted = join(sorted, join(x, " "));
+    }
+
+    return join("sum=", join(sum, join(" squares=", join(squares, join(" sorted=", sorted)))));
+}

@@ -1,0 +1,15 @@
+#include<bits/stdc++.h>
+using namespace std;
+
+vector<vector<double>> inputs = {
+    {1, 2, 3},
+    {4, 5, 6}
+};
+
+int main() {
+    double a = inputs[0][1];
+    double b = inputs[1][2];
+    int n = inputs[0].size();
+
+    return a + b + n;
+}

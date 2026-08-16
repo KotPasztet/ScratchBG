@@ -1,0 +1,38 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// Not a built-in OI solution. This is a sanity test made from common OI/C++
+// building blocks: vector, sort/lower_bound, DSU, Fenwick, priority_queue.
+
+on action(input) {
+    vector<int> v = {8, 1, 5, 3, 5, 2};
+    sort(v);
+
+    int lb = lower_bound(v, 5);
+    int ub = upper_bound(v, 5);
+
+    make_set(5);
+    unite(1, 2);
+    unite(2, 5);
+    bool connected = same(1, 5);
+
+    fw_init(5);
+    for (int i = 1; i <= size(v) - 1; i++) {
+        fw_add(i, at(v, i));
+    }
+    int pref3 = fw_sum(3);
+
+    pq_clear();
+    for (auto x : v) {
+        pq_push(x, x);
+    }
+
+    int first = pq_top();
+    pq_pop();
+    int second = pq_top();
+
+    if (lb == 4 && ub == 6 && connected && pref3 == 6 && first == 1 && second == 2) {
+        return "OK cpp-like algorithmic surface";
+    }
+    return join("FAIL lb=", join(lb, join(" ub=", join(ub, join(" pref=", pref3)))));
+}

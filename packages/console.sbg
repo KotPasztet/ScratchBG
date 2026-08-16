@@ -1,0 +1,28 @@
+proc clearTerminal() {
+    let count = len(Terminal);
+    repeat(count) {
+        delete(Terminal, 1);
+    }
+}
+
+proc logInfo(text) {
+    log(join("[INFO] ", text));
+}
+
+proc logWarn(text) {
+    log(join("[WARN] ", text));
+}
+
+proc logError(text) {
+    log(join("[ERROR] ", text));
+}
+
+proc logSeparator() {
+    log("----------------------------------------");
+}
+
+proc logHeader(title) {
+    logSeparator();
+    log(join("== ", join(title, " ==")));
+    logSeparator();
+}

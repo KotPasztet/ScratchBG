@@ -1,0 +1,31 @@
+import "std";
+
+on action(input) {
+    if (input == "fixed") {
+        setFixedDelta(0.0166667);
+        return "fixed dt on";
+    }
+    if (input == "real") {
+        useRealDelta();
+        return "real dt on";
+    }
+    if (input == "scale") {
+        setDeltaScale(0.5);
+        return "time scale = 0.5";
+    }
+    return join("frame=", join(frame(), join(" dt=", join(dt(), join(" fps=", fps())))));
+}
+
+sprite Mover {
+    import "std/sprite";
+    import "std/time";
+
+    on flag {
+        spriteResetPosition();
+        forever {
+            // Compiler injects tick() once per iteration because dt() is used here.
+            changeX(80 * dt());
+            if (x() > 230) { setX(-230); }
+        }
+    }
+}

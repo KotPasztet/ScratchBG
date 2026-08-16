@@ -1,0 +1,24 @@
+on key "space" {
+    log("space key event");
+}
+
+on key("left arrow") {
+    log("left key event");
+}
+
+on action(input) {
+    if (keyboard.pressed("space")) {
+        return "space pressed";
+    }
+    if (keys.down("left arrow")) {
+        return "left pressed";
+    }
+    return "no key";
+}
+
+sprite Player {
+    on key "right arrow" {
+        changeX(10);
+        log("player right");
+    }
+}

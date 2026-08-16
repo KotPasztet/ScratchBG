@@ -1,0 +1,96 @@
+// Sprite-only helpers. Import this inside sprite { ... } blocks.
+
+proc spriteResetPosition() {
+    goToXY(0, 0);
+    pointDirection(90);
+    setSize(100);
+    show();
+}
+
+proc spriteResetAll() {
+    spriteResetPosition();
+    clearEffects();
+    setDragMode("not draggable");
+}
+
+proc spriteMoveClamped(dx, dy, minX, maxX, minY, maxY) {
+    changeX(dx);
+    changeY(dy);
+    if (x() < minX) {
+        setX(minX);
+    }
+    if (x() > maxX) {
+        setX(maxX);
+    }
+    if (y() < minY) {
+        setY(minY);
+    }
+    if (y() > maxY) {
+        setY(maxY);
+    }
+    return join("x=", join(x(), join(" y=", y())));
+}
+
+proc spriteFaceAndMove(deg, steps) {
+    pointDirection(deg);
+    move(steps);
+    return join("x=", join(x(), join(" y=", y())));
+}
+
+proc spriteGoInvisible() {
+    hide();
+    setSize(1);
+}
+
+proc spriteSayDebug(text) {
+    sayFor(text, 1);
+    log(join("[sprite] ", text));
+}
+
+proc bounceBox(minX, maxX, minY, maxY) {
+    if (x() < minX) {
+        setX(minX);
+        pointDirection(180 - direction());
+    }
+    if (x() > maxX) {
+        setX(maxX);
+        pointDirection(180 - direction());
+    }
+    if (y() < minY) {
+        setY(minY);
+        pointDirection(0 - direction());
+    }
+    if (y() > maxY) {
+        setY(maxY);
+        pointDirection(0 - direction());
+    }
+}
+
+proc spriteInsideStage() {
+    return x() >= -240 && x() <= 240 && y() >= -180 && y() <= 180;
+}
+
+proc spriteClampToStage() {
+    if (x() < -240) { setX(-240); }
+    if (x() > 240) { setX(240); }
+    if (y() < -180) { setY(-180); }
+    if (y() > 180) { setY(180); }
+}
+
+proc spriteMouseVectorX() { return mouseX() - x(); }
+proc spriteMouseVectorY() { return mouseY() - y(); }
+proc spriteDistanceToMouse() {
+    let dxm = mouseX() - x();
+    let dym = mouseY() - y();
+    return sqrt((dxm * dxm) + (dym * dym));
+}
+
+proc spriteFollowMouse(speedPerSecond) {
+    let dx = mouseX() - x();
+    let dy = mouseY() - y();
+    let d = sqrt((dx * dx) + (dy * dy));
+    if (d > 0) {
+        changeX((dx / d) * speedPerSecond * dt());
+        changeY((dy / d) * speedPerSecond * dt());
+    }
+}

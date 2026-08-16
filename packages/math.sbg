@@ -1,0 +1,31 @@
+proc sbgPow(base, exp) {
+    let out = 1;
+    repeat(exp) {
+        out *= base;
+    }
+    return out;
+}
+
+proc sbgMin(a, b) {
+    if (a < b) {
+        return a;
+    }
+    return b;
+}
+
+proc sbgMax(a, b) {
+    if (a > b) {
+        return a;
+    }
+    return b;
+}
+
+proc sbgClamp(value, low, high) {
+    if (value < low) {
+        return low;
+    }
+    if (value > high) {
+        return high;
+    }
+    return value;
+}

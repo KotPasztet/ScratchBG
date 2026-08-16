@@ -1,0 +1,8 @@
+import "std";
+
+on action(input) {
+    let name = fileReadKeyValue("config.txt", "name");
+    let level = fileReadKeyValueInt("config.txt", "level", 1);
+    fileLoadKeyValuesToMap("config.txt");
+    return join(name, join(" level=", join(level, join(" keys=", mapSize()))));
+}

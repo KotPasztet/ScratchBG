@@ -1,0 +1,6 @@
+{
+  "name": "std",
+  "version": "0.9.0-patch15",
+  "main": "main.sbg",
+  "description": "StageBG professional standard library for vanilla Scratch VM"
+}

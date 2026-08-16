@@ -1,0 +1,109 @@
+// Sprite-only Pen standard library. Import this inside `sprite Name { ... }`.
+// It uses Scratch's official vanilla Pen extension.
+
+proc penReset() {
+    penClear();
+    penUp();
+    penSetColor("#000000");
+    penSetSize(1);
+    penSetTransparency(0);
+}
+
+proc penUse(color, size) {
+    penSetColor(color);
+    penSetSize(size);
+}
+
+proc penLine(x1, y1, x2, y2) {
+    penUp();
+    goToXY(x1, y1);
+    penDown();
+    goToXY(x2, y2);
+    penUp();
+}
+
+proc penRect(x1, y1, x2, y2) {
+    penLine(x1, y1, x2, y1);
+    penLine(x2, y1, x2, y2);
+    penLine(x2, y2, x1, y2);
+    penLine(x1, y2, x1, y1);
+}
+
+proc penFilledRect(x1, y1, x2, y2, step) {
+    let y0 = y1;
+    while (y0 <= y2) {
+        penLine(x1, y0, x2, y0);
+        y0 += step;
+    }
+}
+
+proc penCircle(cx, cy, radius, segments) {
+    let prevX = cx + radius;
+    let prevY = cy;
+    for (let i = 1; i <= segments; i += 1) {
+        let a = (360 / segments) * i;
+        let nx = cx + (cos(a) * radius);
+        let ny = cy + (sin(a) * radius);
+        penLine(prevX, prevY, nx, ny);
+        prevX = nx;
+        prevY = ny;
+    }
+}
+
+proc penGrid(minX, maxX, minY, maxY, step) {
+    let x0 = minX;
+    while (x0 <= maxX) {
+        penLine(x0, minY, x0, maxY);
+        x0 += step;
+    }
+    let y0 = minY;
+    while (y0 <= maxY) {
+        penLine(minX, y0, maxX, y0);
+        y0 += step;
+    }
+}
+
+proc penGotoDraw(nx, ny) {
+    penDown();
+    goToXY(nx, ny);
+}
+
+proc penAxes() {
+    penLine(-240, 0, 240, 0);
+    penLine(0, -180, 0, 180);
+}
+
+list __pen_points = [];
+
+proc penPointsClear() { clearList(__pen_points); }
+proc penPoint(x0, y0) { push(__pen_points, x0); push(__pen_points, y0); return len(__pen_points) / 2; }
+
+proc penPolylineFromPoints() {
+    // Reads coordinate pairs from __pen_points: x1,y1,x2,y2,...
+    if (len(__pen_points) < 4) { return 0; }
+    penUp();
+    goToXY(item(__pen_points, 1), item(__pen_points, 2));
+    penDown();
+    let i = 3;
+    while (i < len(__pen_points)) {
+        goToXY(item(__pen_points, i), item(__pen_points, i + 1));
+        i += 2;
+    }
+    penUp();
+    return len(__pen_points) / 2;
+}
+
+proc penFilledCircle(cx, cy, radius, step) {
+    let y0 = 0 - radius;
+    while (y0 <= radius) {
+        let half = sqrt((radius * radius) - (y0 * y0));
+        penLine(cx - half, cy + y0, cx + half, cy + y0);
+        y0 += step;
+    }
+}
+
+proc penPlotFunction(minX, maxX, step, scaleY) {
+    // Uses current global tmp0 as y source convention? For real function plotting,
+    // compute points with penPoint() then use penPolylineFromPoints().
+    return 0;
+}

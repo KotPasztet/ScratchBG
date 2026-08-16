@@ -1,0 +1,19 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+vector<vector<int>> mat;
+
+int main() {
+    mat.resize(3);
+    mat[0].push_back(10);
+    mat[0].push_back(20);
+    mat[1].push_back(30);
+
+    int a = mat[0][0];
+    int b = mat[0][1];
+    int c = mat[1][0];
+
+    mat[0][1] += 5;
+
+    return join("sum=", join(a + b + c, join(" changed=", mat[0][1])));
+}

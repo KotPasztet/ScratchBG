@@ -1,0 +1,41 @@
+proc consoleClear() {
+    clearTerminal();
+}
+
+proc print(value) {
+    log(value);
+    return value;
+}
+
+proc println(value) {
+    log(value);
+    return value;
+}
+
+proc printInfo(value) {
+    let out = join("[INFO] ", value);
+    log(out);
+    return out;
+}
+
+proc printWarn(value) {
+    let out = join("[WARN] ", value);
+    log(out);
+    return out;
+}
+
+proc printError(value) {
+    let out = join("[ERROR] ", value);
+    log(out);
+    return out;
+}
+
+proc printLine() {
+    log("----------------------------------------");
+}
+
+proc printHeader(title) {
+    printLine();
+    log(join("== ", join(title, " ==")));
+    printLine();
+}

@@ -1,0 +1,42 @@
+// Algorithm helpers. Generic list operations that need real list references are
+// compiler builtins: reverseList(xs), sortAsc(xs), sortDesc(xs), lowerBoundTo(xs, v, out).
+
+proc gcd(a, b) {
+    let x = abs(a);
+    let y = abs(b);
+    while (y != 0) {
+        let t = x % y;
+        x = y;
+        y = t;
+    }
+    return x;
+}
+
+proc lcm(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    return abs((a / gcd(a, b)) * b);
+}
+
+proc modPow(base, exp, mod) {
+    let b = base % mod;
+    let e = exp;
+    let out = 1;
+    while (e > 0) {
+        if ((e % 2) == 1) { out = (out * b) % mod; }
+        b = (b * b) % mod;
+        e = floor(e / 2);
+    }
+    return out;
+}
+
+proc isPrime(n) {
+    if (n < 2) { return 0; }
+    if (n == 2) { return 1; }
+    if ((n % 2) == 0) { return 0; }
+    let d = 3;
+    while (d * d <= n) {
+        if ((n % d) == 0) { return 0; }
+        d += 2;
+    }
+    return 1;
+}

@@ -1,0 +1,12 @@
+// Sound/Music wrappers. These compile to vanilla Scratch sound blocks and the
+// official Scratch Music extension blocks.
+
+proc soundVolume() { return volume(); }
+proc soundSetVolume(value) { setVolume(value); return value; }
+proc soundChangeVolume(deltaValue) { changeVolume(deltaValue); return volume(); }
+proc musicTempo() { return tempo(); }
+proc musicSetTempo(value) { setTempo(value); return value; }
+proc musicChangeTempo(deltaValue) { changeTempo(deltaValue); return tempo(); }
+proc musicNote(note, beats) { playNote(note, beats); }
+proc musicRest(beats) { rest(beats); }
+proc musicInstrument(id) { setInstrument(id); return id; }

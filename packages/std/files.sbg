@@ -1,0 +1,122 @@
+// Compile-time embedded file API.
+// Files are embedded by the compiler into global Scratch lists:
+//   python3 sbg_patch14.py compile app.sbg app.sb3 --embed data/config.txt:config.txt
+// This library treats those lists like a tiny read-only filesystem.
+
+let file_index = 0;
+let file_text = "";
+let file_size = 0;
+let file_line_count = 0;
+let file_error = "";
+
+proc fileCount() {
+    return len(__sbg_file_names);
+}
+
+proc fileName(index) {
+    if (index < 1 || index > len(__sbg_file_names)) {
+        file_error = "file index out of range";
+        return "";
+    }
+    file_error = "";
+    return item(__sbg_file_names, index);
+}
+
+proc fileExists(path) {
+    for (let i = 1; i <= len(__sbg_file_names); i += 1) {
+        if (item(__sbg_file_names, i) == path) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+proc fileOpen(path) {
+    file_index = 0;
+    file_text = "";
+    file_size = 0;
+    file_line_count = 0;
+    file_error = "not found";
+    for (let i = 1; i <= len(__sbg_file_names); i += 1) {
+        if (item(__sbg_file_names, i) == path) {
+            file_index = i;
+            file_text = item(__sbg_file_texts, i);
+            file_size = item(__sbg_file_sizes, i);
+            file_line_count = item(__sbg_file_line_count, i);
+            file_error = "";
+            return 1;
+        }
+    }
+    return 0;
+}
+
+proc fileReadAll(path) {
+    if (fileOpen(path)) {
+        return file_text;
+    }
+    return "";
+}
+
+proc fileSize(path) {
+    if (fileOpen(path)) {
+        return file_size;
+    }
+    return 0;
+}
+
+proc fileLines(path) {
+    if (fileOpen(path)) {
+        return file_line_count;
+    }
+    return 0;
+}
+
+proc fileLine(lineIndex) {
+    if (file_index == 0) {
+        file_error = "no open file";
+        return "";
+    }
+    if (lineIndex < 1 || lineIndex > file_line_count) {
+        file_error = "line index out of range";
+        return "";
+    }
+    let lineStart = item(__sbg_file_line_start, file_index);
+    file_error = "";
+    return item(__sbg_file_lines, lineStart + lineIndex - 1);
+}
+
+proc fileReadLine(path, lineIndex) {
+    if (!fileOpen(path)) {
+        return "";
+    }
+    return fileLine(lineIndex);
+}
+
+proc fileContains(path, needle) {
+    let text = fileReadAll(path);
+    if (file_error != "") {
+        return 0;
+    }
+    return containsText(text, needle);
+}
+
+proc fileDump(path) {
+    if (!fileOpen(path)) {
+        log(join("file not found: ", path));
+        return 0;
+    }
+    log(join("--- file: ", path));
+    for (let i = 1; i <= file_line_count; i += 1) {
+        log(fileLine(i));
+    }
+    log("--- end file");
+    return file_line_count;
+}
+
+proc fileDebugList() {
+    log(join("embedded files: ", len(__sbg_file_names)));
+    for (let i = 1; i <= len(__sbg_file_names); i += 1) {
+        log(join(i, join(": ", item(__sbg_file_names, i))));
+    }
+    return len(__sbg_file_names);
+}

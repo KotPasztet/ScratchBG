@@ -1,0 +1,20 @@
+// Core stage-safe standard library.
+// This is safe to import on Stage. Sprite-only libraries are separate:
+//   import "std/sprite";
+//   import "std/pen";
+import "./runtime.sbg";
+import "./console.sbg";
+import "./core.sbg";
+import "./math.sbg";
+import "./strings.sbg";
+import "./vectors.sbg";
+import "./files.sbg";
+import "./time.sbg";
+import "./turbo.sbg";
+import "./text.sbg";
+import "./collections.sbg";
+import "./debug.sbg";
+import "./random.sbg";
+import "./system.sbg";
+import "./audio.sbg";
+import "./files_parse.sbg";

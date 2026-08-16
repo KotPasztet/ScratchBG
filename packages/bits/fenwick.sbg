@@ -1,0 +1,52 @@
+// Fenwick tree / Binary Indexed Tree: 1..n.
+list bit_tree = [];
+let bit_n = 0;
+
+proc bitInit(n) {
+    bit_n = n;
+    clearList(bit_tree);
+    for (let i in rangeClosed(1, n)) { push(bit_tree, 0); }
+    return n;
+}
+
+proc bitAdd(index, delta) {
+    let i = index;
+    while (i <= bit_n) {
+        setItem(bit_tree, i, item(bit_tree, i) + delta);
+        // Scratch has no bitwise i += i & -i, so use arithmetic lowbit.
+        let low = i - (floor(i / 2) * 2);
+        let p = 1;
+        while (low == 0) {
+            i = floor(i / 2);
+            p *= 2;
+            low = i - (floor(i / 2) * 2);
+        }
+        i = index + p;
+        index = i;
+    }
+    return 1;
+}
+
+proc bitSum(index) {
+    let i = index;
+    let out = 0;
+    while (i > 0) {
+        out += item(bit_tree, i);
+        let tmp = i;
+        let p = 1;
+        while ((tmp - floor(tmp / 2) * 2) == 0) {
+            tmp = floor(tmp / 2);
+            p *= 2;
+        }
+        i -= p;
+    }
+    return out;
+}
+
+proc bitRangeSum(left, right) { return bitSum(right) - bitSum(left - 1); }
+
+// Compact aliases.
+proc fw_init(n) { return bitInit(n); }
+proc fw_add(i, delta) { return bitAdd(i, delta); }
+proc fw_sum(i) { return bitSum(i); }
+proc fw_range(l, r) { return bitRangeSum(l, r); }

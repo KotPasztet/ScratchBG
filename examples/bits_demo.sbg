@@ -1,0 +1,20 @@
+import "bits";
+
+on action(input) {
+    pqClear();
+    pqPush(30, "C");
+    pqPush(10, "A");
+    pqPush(20, "B");
+
+    let out = "";
+    while (!pqEmpty()) {
+        pqPop();
+        out = join(out, pq_pop_value);
+    }
+
+    dsuInit(5);
+    dsuUnion(1, 2);
+    dsuUnion(2, 3);
+
+    return join("pq=", join(out, join(" same13=", dsuSame(1, 3))));
+}

@@ -1,0 +1,13 @@
+// Random helpers based on Scratch's random reporter.
+
+proc randFloat(minValue, maxValue) { return random(minValue, maxValue); }
+proc randBool() { return random(0, 1) > 0.5; }
+proc randSign() {
+    if (randBool()) { return 1; }
+    return -1;
+}
+proc randChoice2(a, b) {
+    if (randBool()) { return a; }
+    return b;
+}
+proc randRangeInt(minValue, maxValue) { return round(random(minValue, maxValue)); }

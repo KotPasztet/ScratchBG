@@ -1,0 +1,55 @@
+// StageBG STD runtime registers. Useful when you want Scratch-style multi-output.
+let res_num = 0;
+let res_str = "";
+let res_bool = 0;
+let tmp0 = 0;
+let tmp1 = 0;
+let tmp2 = 0;
+let tmp3 = 0;
+let tmp4 = 0;
+let tmp5 = 0;
+let tmp6 = 0;
+let tmp7 = 0;
+let tmp8 = 0;
+let tmp9 = 0;
+list __stack = [];
+
+proc setResNum(value) {
+    res_num = value;
+    return value;
+}
+
+proc setResStr(value) {
+    res_str = value;
+    return value;
+}
+
+proc setResBool(value) {
+    if (value) {
+        res_bool = 1;
+        return 1;
+    }
+    res_bool = 0;
+    return 0;
+}
+
+proc stackClear() {
+    repeat(len(__stack)) {
+        delete(__stack, 1);
+    }
+}
+
+proc stackPush(value) {
+    push(__stack, value);
+    return len(__stack);
+}
+
+proc stackPop() {
+    let n = len(__stack);
+    if (n <= 0) {
+        return "";
+    }
+    let out = item(__stack, n);
+    delete(__stack, n);
+    return out;
+}

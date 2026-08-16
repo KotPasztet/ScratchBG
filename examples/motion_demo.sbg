@@ -1,0 +1,27 @@
+stage {
+    on action(input) {
+        clearTerminal();
+        broadcast("draw.step");
+        return "motion tick sent";
+    }
+}
+
+sprite Dot {
+    let steps = 0;
+
+    proc stepOnce() {
+        changeX(10);
+        changeY(4);
+        steps += 1;
+        return join("Dot x=", join(x(), join(" y=", y())));
+    }
+
+    on flag {
+        hide();
+        goToXY(0, 0);
+    }
+
+    on message "draw.step" {
+        log(stepOnce());
+    }
+}

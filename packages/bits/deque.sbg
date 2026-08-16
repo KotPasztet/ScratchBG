@@ -1,0 +1,26 @@
+// Default deque/stack/queue. Global by design for Scratch compatibility.
+list dq = [];
+
+proc dqClear() { clearList(dq); return 0; }
+proc dqSize() { return len(dq); }
+proc dqEmpty() { return len(dq) == 0; }
+proc dqPushBack(value) { push(dq, value); return len(dq); }
+proc dqPushFront(value) { insert(dq, 1, value); return len(dq); }
+proc dqFront() { if (len(dq) == 0) { return ""; } return item(dq, 1); }
+proc dqBack() { if (len(dq) == 0) { return ""; } return item(dq, len(dq)); }
+proc dqPopFront() { if (len(dq) == 0) { return ""; } let v = item(dq, 1); deleteFirst(dq); return v; }
+proc dqPopBack() { if (len(dq) == 0) { return ""; } let v = item(dq, len(dq)); deleteLast(dq); return v; }
+
+proc stClear() { return dqClear(); }
+proc stPush(value) { return dqPushBack(value); }
+proc stTop() { return dqBack(); }
+proc stPop() { return dqPopBack(); }
+proc stEmpty() { return dqEmpty(); }
+proc stSize() { return dqSize(); }
+
+proc quClear() { return dqClear(); }
+proc quPush(value) { return dqPushBack(value); }
+proc quFront() { return dqFront(); }
+proc quPop() { return dqPopFront(); }
+proc quEmpty() { return dqEmpty(); }
+proc quSize() { return dqSize(); }

@@ -1,0 +1,11 @@
+proc add(a, b) {
+    return a + b;
+}
+
+proc combo(x) {
+    return add(x, 10) * add(2, 3);
+}
+
+on action(input) {
+    log(join("combo = ", combo(7)));
+}

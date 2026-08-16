@@ -1,0 +1,25 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+vector<int> v = {5, 1, 4};
+
+on action(input) {
+    v.push_back(2);
+    v.sort();
+
+    int n = v.size();
+    int p = v.lower_bound(4);
+
+    pq.clear();
+    pq.push(3, "C");
+    pq.push(1, "A");
+    pq.push(2, "B");
+
+    string out = "";
+    while (!pq.empty()) {
+        out = join(out, pq.top());
+        pq.pop();
+    }
+
+    return join("n=", join(n, join(" p=", join(p, join(" pq=", out)))));
+}

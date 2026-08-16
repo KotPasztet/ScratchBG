@@ -1,0 +1,117 @@
+// String helpers built from vanilla Scratch reporter blocks.
+proc str(value) {
+    return join("", value);
+}
+
+proc charAt(text, index) {
+    return letter(text, index);
+}
+
+proc isEmpty(text) {
+    return len(text) == 0;
+}
+
+proc boolText(value) {
+    if (value) {
+        return "true";
+    }
+    return "false";
+}
+
+proc repeatString(text, times) {
+    let out = "";
+    repeat(times) {
+        out = join(out, text);
+    }
+    return out;
+}
+
+proc startsWith(text, prefix) {
+    let n = len(prefix);
+    if (n > len(text)) {
+        return 0;
+    }
+    for (let i = 1; i <= n; i += 1) {
+        if (letter(text, i) != letter(prefix, i)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+proc endsWith(text, suffix) {
+    let n = len(suffix);
+    let total = len(text);
+    if (n > total) {
+        return 0;
+    }
+    for (let i = 1; i <= n; i += 1) {
+        let a = letter(text, (total - n) + i);
+        let b = letter(suffix, i);
+        if (a != b) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+proc containsStr(text, part) {
+    return containsText(text, part);
+}
+
+proc left(text, count) {
+    let out = "";
+    let limit = count;
+    if (limit > len(text)) {
+        limit = len(text);
+    }
+    for (let i = 1; i <= limit; i += 1) {
+        out = join(out, letter(text, i));
+    }
+    return out;
+}
+
+proc right(text, count) {
+    let out = "";
+    let total = len(text);
+    let startIndex = total - count + 1;
+    if (startIndex < 1) {
+        startIndex = 1;
+    }
+    for (let i = startIndex; i <= total; i += 1) {
+        out = join(out, letter(text, i));
+    }
+    return out;
+}
+
+proc slice(text, fromIndex, toIndex) {
+    let out = "";
+    let startIndex = fromIndex;
+    let stop = toIndex;
+    if (startIndex < 1) {
+        startIndex = 1;
+    }
+    if (stop > len(text)) {
+        stop = len(text);
+    }
+    for (let i = startIndex; i <= stop; i += 1) {
+        out = join(out, letter(text, i));
+    }
+    return out;
+}
+
+proc padLeft(text, width, pad) {
+    let out = str(text);
+    while (len(out) < width) {
+        out = join(pad, out);
+    }
+    return out;
+}
+
+proc padRight(text, width, pad) {
+    let out = str(text);
+    while (len(out) < width) {
+        out = join(out, pad);
+    }
+    return out;
+}

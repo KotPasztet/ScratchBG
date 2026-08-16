@@ -1,0 +1,4 @@
+# demo config
+name=StageBG
+level=15
+mode=vanilla-scratch

@@ -1,0 +1,38 @@
+// StageBG time/turbo helpers.
+// Backed by compiler builtins, compiled to vanilla Scratch variables + timer blocks.
+
+proc seconds() { return timeSeconds(); }
+proc now() { return timeSeconds(); }
+proc delta() { return dt(); }
+proc deltaRaw() { return rawDeltaTime(); }
+proc frameNumber() { return frame(); }
+proc framesPerSecond() { return fps(); }
+
+proc fixedStep(secondsPerFrame) {
+    setFixedDelta(secondsPerFrame);
+}
+
+proc realStep() {
+    useRealDelta();
+}
+
+proc timeScale(scale) {
+    setDeltaScale(scale);
+}
+
+proc maxFrameDelta(secondsPerFrame) {
+    setDeltaCap(secondsPerFrame);
+}
+
+proc beginFrame() {
+    tick();
+    return dt();
+}
+
+proc perSecond(value) {
+    return value * dt();
+}
+
+proc after(seconds, speed) {
+    return seconds * speed;
+}

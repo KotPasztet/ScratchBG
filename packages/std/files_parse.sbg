@@ -1,0 +1,56 @@
+// Higher-level parsing for compile-time embedded files. Depends on std/files and std/text.
+// Format supported here: simple KEY=VALUE lines.
+
+let file_kv_key = "";
+let file_kv_value = "";
+let file_parse_error = "";
+
+proc fileReadKeyValue(path, key) {
+    file_parse_error = "";
+    if (!fileOpen(path)) {
+        file_parse_error = file_error;
+        return "";
+    }
+    for (let i = 1; i <= file_line_count; i += 1) {
+        let line = trim(fileLine(i));
+        if (len(line) > 0 && letter(line, 1) != "#") {
+            let eq = indexOfText(line, "=");
+            if (eq > 0) {
+                let k = trim(slice(line, 1, eq - 1));
+                let v = trim(slice(line, eq + 1, len(line)));
+                if (k == key) { return v; }
+            }
+        }
+    }
+    file_parse_error = "missing key";
+    return "";
+}
+
+proc fileReadKeyValueInt(path, key, fallback) {
+    let v = fileReadKeyValue(path, key);
+    if (file_parse_error != "") { return fallback; }
+    let n = parseInt(v);
+    if (str_error != "") { return fallback; }
+    return n;
+}
+
+proc fileLoadKeyValuesToMap(path) {
+    mapClear();
+    if (!fileOpen(path)) {
+        file_parse_error = file_error;
+        return 0;
+    }
+    for (let i = 1; i <= file_line_count; i += 1) {
+        let line = trim(fileLine(i));
+        if (len(line) > 0 && letter(line, 1) != "#") {
+            let eq = indexOfText(line, "=");
+            if (eq > 0) {
+                let k = trim(slice(line, 1, eq - 1));
+                let v = trim(slice(line, eq + 1, len(line)));
+                mapSet(k, v);
+            }
+        }
+    }
+    file_parse_error = "";
+    return mapSize();
+}

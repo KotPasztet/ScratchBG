@@ -1,0 +1,15 @@
+// StageBG bits-like package.
+// Import this when you want algorithmic helpers similar in spirit to C++ bits/stdc++.h.
+// It does NOT contain solved olympiad tasks. It contains reusable containers and algorithms.
+import "../std/runtime.sbg";
+import "../std/core.sbg";
+import "../std/math.sbg";
+import "../std/strings.sbg";
+import "../std/text.sbg";
+import "../std/collections.sbg";
+import "./priority_queue.sbg";
+import "./deque.sbg";
+import "./dsu.sbg";
+import "./fenwick.sbg";
+import "./algorithms.sbg";
+import "./cpp_compat.sbg";

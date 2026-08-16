@@ -1,0 +1,67 @@
+// Core language/runtime helpers. These compile to vanilla Scratch blocks.
+
+proc bool(value) {
+    if (value) {
+        return 1;
+    }
+    return 0;
+}
+
+proc not(value) {
+    if (value) {
+        return 0;
+    }
+    return 1;
+}
+
+proc ternary(cond, a, b) {
+    if (cond) {
+        return a;
+    }
+    return b;
+}
+
+proc assert(cond, msg) {
+    if (!cond) {
+        log(join("ASSERT FAILED: ", msg));
+        return 0;
+    }
+    return 1;
+}
+
+proc assertEq(a, b, msg) {
+    if (a != b) {
+        log(join("ASSERT EQ FAILED: ", join(msg, join(" | got=", join(a, join(" expected=", b))))));
+        return 0;
+    }
+    return 1;
+}
+
+proc noop() {
+    return 0;
+}
+
+proc identity(value) {
+    return value;
+}
+
+proc swapToTemp(a, b) {
+    tmp0 = a;
+    tmp1 = b;
+    return 1;
+}
+
+proc between(value, low, high) {
+    return value >= low && value <= high;
+}
+
+proc outside(value, low, high) {
+    return value < low || value > high;
+}
+
+proc choose01(value, falseValue, trueValue) {
+    if (value) {
+        return trueValue;
+    }
+    return falseValue;
+}

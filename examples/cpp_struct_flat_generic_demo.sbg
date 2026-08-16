@@ -1,0 +1,30 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// Generic C++-style struct support test. This is not a domain-specific API.
+struct Edge {
+    int to;
+    int cost;
+};
+
+vector<vector<Edge>> graph;
+
+int main() {
+    graph.resize(3);
+
+    Edge a;
+    a.to = 1;
+    a.cost = 7;
+
+    Edge b;
+    b.to = 2;
+    b.cost = 11;
+
+    graph[0].push_back(a);
+    graph[0].push_back(b);
+
+    int total = graph[0][0].cost + graph[0][1].cost;
+    graph[0][1].cost += 4;
+
+    return join("edges=", join(graph[0].size(), join(" total=", join(total, join(" changed=", graph[0][1].cost)))));
+}

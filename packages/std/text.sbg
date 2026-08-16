@@ -1,0 +1,115 @@
+// Extra text utilities. Indices are 1-based to match Scratch list/string blocks.
+
+list str_split_res = [];
+let str_error = "";
+
+proc isDigit(ch) {
+    return ch == "0" || ch == "1" || ch == "2" || ch == "3" || ch == "4" || ch == "5" || ch == "6" || ch == "7" || ch == "8" || ch == "9";
+}
+
+proc digitValue(ch) {
+    if (ch == "0") { return 0; }
+    if (ch == "1") { return 1; }
+    if (ch == "2") { return 2; }
+    if (ch == "3") { return 3; }
+    if (ch == "4") { return 4; }
+    if (ch == "5") { return 5; }
+    if (ch == "6") { return 6; }
+    if (ch == "7") { return 7; }
+    if (ch == "8") { return 8; }
+    if (ch == "9") { return 9; }
+    return -1;
+}
+
+proc parseInt(textValue) {
+    let signValue = 1;
+    let i = 1;
+    let out = 0;
+    str_error = "";
+    if (letter(textValue, 1) == letter("x-y", 2)) {
+        signValue = -1;
+        i = 2;
+    }
+    while (i <= len(textValue)) {
+        let d = digitValue(letter(textValue, i));
+        if (d < 0) {
+            str_error = "invalid integer";
+            return 0;
+        }
+        out = (out * 10) + d;
+        i += 1;
+    }
+    return out * signValue;
+}
+
+proc indexOfText(textValue, needle) {
+    if (len(needle) == 0) { return 1; }
+    if (len(needle) > len(textValue)) { return 0; }
+    let maxStart = len(textValue) - len(needle) + 1;
+    for (let i = 1; i <= maxStart; i += 1) {
+        let ok = 1;
+        for (let j = 1; j <= len(needle); j += 1) {
+            if (letter(textValue, i + j - 1) != letter(needle, j)) { ok = 0; }
+        }
+        if (ok) { return i; }
+    }
+    return 0;
+}
+
+proc trimLeft(textValue) {
+    let i = 1;
+    while (i <= len(textValue) && (letter(textValue, i) == " " || letter(textValue, i) == "\t")) {
+        i += 1;
+    }
+    return slice(textValue, i, len(textValue));
+}
+
+proc trimRight(textValue) {
+    let i = len(textValue);
+    while (i > 0 && (letter(textValue, i) == " " || letter(textValue, i) == "\t")) {
+        i -= 1;
+    }
+    return slice(textValue, 1, i);
+}
+
+proc trim(textValue) {
+    return trimRight(trimLeft(textValue));
+}
+
+proc splitByChar(textValue, separator) {
+    clearList(str_split_res);
+    let current = "";
+    for (let i = 1; i <= len(textValue); i += 1) {
+        let ch = letter(textValue, i);
+        if (ch == separator) {
+            push(str_split_res, current);
+            current = "";
+        } else {
+            current = join(current, ch);
+        }
+    }
+    push(str_split_res, current);
+    return len(str_split_res);
+}
+
+proc replaceChar(textValue, fromChar, toChar) {
+    let out = "";
+    for (let i = 1; i <= len(textValue); i += 1) {
+        let ch = letter(textValue, i);
+        if (ch == fromChar) { out = join(out, toChar); }
+        else { out = join(out, ch); }
+    }
+    return out;
+}
+
+proc removeChar(textValue, chToRemove) {
+    return replaceChar(textValue, chToRemove, "");
+}
+
+proc countChar(textValue, chToCount) {
+    let c = 0;
+    for (let i = 1; i <= len(textValue); i += 1) {
+        if (letter(textValue, i) == chToCount) { c += 1; }
+    }
+    return c;
+}

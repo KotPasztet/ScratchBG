@@ -1,0 +1,39 @@
+import "../packages/console.sbg";
+import "../packages/math.sbg";
+import "../packages/string.sbg";
+
+stage {
+    proc answerFor(text) {
+        if (text == "hello") {
+            return "czesc, dzialam w Scratchu i natywnie";
+        }
+        if (text == "2+2") {
+            return 4;
+        }
+        if (text == "worker") {
+            broadcast("worker.tick");
+            return "wyslano worker.tick";
+        }
+        return join("nie znam komendy: ", text);
+    }
+
+    on action(input) {
+        return answerFor(input);
+    }
+}
+
+sprite Worker {
+    let counter = 0;
+    list history = [];
+
+    proc nextValue() {
+        counter += 1;
+        push(history, counter);
+        return counter;
+    }
+
+    on message "worker.tick" {
+        let value = nextValue();
+        log(join("worker value = ", value));
+    }
+}

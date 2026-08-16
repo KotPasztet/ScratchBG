@@ -1,0 +1,16 @@
+// System/runtime constants for Scratch VM target.
+let STAGE_WIDTH = 480;
+let STAGE_HEIGHT = 360;
+let STAGE_LEFT = -240;
+let STAGE_RIGHT = 240;
+let STAGE_TOP = 180;
+let STAGE_BOTTOM = -180;
+
+proc stageWidth() { return STAGE_WIDTH; }
+proc stageHeight() { return STAGE_HEIGHT; }
+proc stageLeft() { return STAGE_LEFT; }
+proc stageRight() { return STAGE_RIGHT; }
+proc stageTop() { return STAGE_TOP; }
+proc stageBottom() { return STAGE_BOTTOM; }
+proc clampStageX(value) { return clamp(value, STAGE_LEFT, STAGE_RIGHT); }
+proc clampStageY(value) { return clamp(value, STAGE_BOTTOM, STAGE_TOP); }

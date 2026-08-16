@@ -1,0 +1,122 @@
+// Professional collection helpers implemented on top of vanilla Scratch lists.
+// Scratch has no true heap objects, so this file provides practical global
+// structures that behave like a normal stdlib for command interpreters, parsers
+// and small apps.
+
+list __std_stack = [];
+list __std_queue = [];
+list __std_set = [];
+list __std_map_keys = [];
+list __std_map_values = [];
+list __std_buf = [];
+let map_error = "";
+
+proc stackSize() { return len(__std_stack); }
+proc stackEmpty() { return len(__std_stack) == 0; }
+proc stackClearStd() { clearList(__std_stack); }
+proc stackPushStd(value) { push(__std_stack, value); return len(__std_stack); }
+proc stackPeekStd() {
+    if (len(__std_stack) <= 0) { return ""; }
+    return item(__std_stack, len(__std_stack));
+}
+proc stackPopStd() {
+    if (len(__std_stack) <= 0) { return ""; }
+    let out = item(__std_stack, len(__std_stack));
+    delete(__std_stack, len(__std_stack));
+    return out;
+}
+
+proc queueSize() { return len(__std_queue); }
+proc queueEmpty() { return len(__std_queue) == 0; }
+proc queueClear() { clearList(__std_queue); }
+proc enqueue(value) { push(__std_queue, value); return len(__std_queue); }
+proc queuePeek() {
+    if (len(__std_queue) <= 0) { return ""; }
+    return item(__std_queue, 1);
+}
+proc dequeue() {
+    if (len(__std_queue) <= 0) { return ""; }
+    let out = item(__std_queue, 1);
+    delete(__std_queue, 1);
+    return out;
+}
+
+proc setClear() { clearList(__std_set); }
+proc setSize() { return len(__std_set); }
+proc setHas(value) { return contains(__std_set, value); }
+proc setAdd(value) {
+    if (!contains(__std_set, value)) { push(__std_set, value); }
+    return len(__std_set);
+}
+proc setDelete(value) {
+    for (let i = 1; i <= len(__std_set); i += 1) {
+        if (item(__std_set, i) == value) {
+            delete(__std_set, i);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+proc mapClear() {
+    clearList(__std_map_keys);
+    clearList(__std_map_values);
+    map_error = "";
+}
+proc mapSize() { return len(__std_map_keys); }
+proc mapIndex(key) {
+    for (let i = 1; i <= len(__std_map_keys); i += 1) {
+        if (item(__std_map_keys, i) == key) { return i; }
+    }
+    return 0;
+}
+proc mapHas(key) { return mapIndex(key) > 0; }
+proc mapSet(key, value) {
+    let i = mapIndex(key);
+    if (i > 0) {
+        replace(__std_map_values, i, value);
+    } else {
+        push(__std_map_keys, key);
+        push(__std_map_values, value);
+    }
+    map_error = "";
+    return value;
+}
+proc mapGet(key) {
+    let i = mapIndex(key);
+    if (i <= 0) {
+        map_error = "missing key";
+        return "";
+    }
+    map_error = "";
+    return item(__std_map_values, i);
+}
+proc mapGetDefault(key, fallback) {
+    let i = mapIndex(key);
+    if (i <= 0) { return fallback; }
+    return item(__std_map_values, i);
+}
+proc mapDelete(key) {
+    let i = mapIndex(key);
+    if (i <= 0) { return 0; }
+    delete(__std_map_keys, i);
+    delete(__std_map_values, i);
+    return 1;
+}
+proc mapDump() {
+    for (let i = 1; i <= len(__std_map_keys); i += 1) {
+        log(join(item(__std_map_keys, i), join(" = ", item(__std_map_values, i))));
+    }
+    return len(__std_map_keys);
+}
+
+proc bufferClear() { clearList(__std_buf); }
+proc bufferPush(value) { push(__std_buf, value); return len(__std_buf); }
+proc bufferJoin(separator) {
+    let out = "";
+    for (let i = 1; i <= len(__std_buf); i += 1) {
+        if (i > 1) { out = join(out, separator); }
+        out = join(out, item(__std_buf, i));
+    }
+    return out;
+}

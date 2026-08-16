@@ -1,0 +1,34 @@
+proc vecLen(x, y) {
+    return sqrt((x * x) + (y * y));
+}
+
+proc vecDist(x1, y1, x2, y2) {
+    return vecLen(x2 - x1, y2 - y1);
+}
+
+proc vecDot(ax, ay, bx, by) {
+    return (ax * bx) + (ay * by);
+}
+
+proc vecNormalizeX(x, y) {
+    let l = vecLen(x, y);
+    if (l == 0) {
+        return 0;
+    }
+    return x / l;
+}
+
+proc vecNormalizeY(x, y) {
+    let l = vecLen(x, y);
+    if (l == 0) {
+        return 0;
+    }
+    return y / l;
+}
+
+proc moveTowardValue(current, target, maxDelta) {
+    if (abs(target - current) <= maxDelta) {
+        return target;
+    }
+    return current + (sign(target - current) * maxDelta);
+}

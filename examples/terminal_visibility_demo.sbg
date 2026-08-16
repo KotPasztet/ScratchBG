@@ -1,0 +1,40 @@
+#include <std>
+using namespace std;
+
+on action(input) {
+    if (input == "hide") {
+        terminal.hide();
+        return "terminal list hidden; logs still append internally";
+    }
+
+    if (input == "show") {
+        terminal.show();
+        return "terminal list visible";
+    }
+
+    if (input == "prompt_off") {
+        terminal.hidePrompt();
+        return "input prompt disabled after this command";
+    }
+
+    if (input == "prompt_on") {
+        terminal.showPrompt();
+        return "input prompt enabled";
+    }
+
+    if (input == "hide_all") {
+        terminal.hideAll();
+        return "terminal + prompt hidden after this command";
+    }
+
+    if (input == "show_all") {
+        terminal.showAll();
+        return "terminal + prompt visible";
+    }
+
+    if (input == "status") {
+        return join("terminal=", join(terminal.visible(), join(" prompt=", terminal.promptVisible())));
+    }
+
+    return join("echo: ", input);
+}

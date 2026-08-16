@@ -1,0 +1,27 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+on action(input) {
+    vector<int> a = {5, 1, 4, 2, 3};
+    sort(a);
+
+    int sum = 0;
+    for (auto x : a) {
+        sum += x;
+    }
+
+    int p = lower_bound(a, 3);
+    bool has4 = binary_search(a, 4);
+
+    pq_clear();
+    pq_push(30, "C");
+    pq_push(10, "A");
+    pq_push(20, "B");
+    string order = "";
+    while (!pq_empty()) {
+        order = join(order, pq_top());
+        pq_pop();
+    }
+
+    return join("sum=", join(sum, join(" p=", join(p, join(" has4=", join(has4, join(" pq=", order)))))));
+}

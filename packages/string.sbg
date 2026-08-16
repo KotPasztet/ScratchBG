@@ -1,0 +1,11 @@
+proc repeatStr(text, times) {
+    let out = "";
+    repeat(times) {
+        out = join(out, text);
+    }
+    return out;
+}
+
+proc prefix(prefixText, value) {
+    return join(prefixText, value);
+}

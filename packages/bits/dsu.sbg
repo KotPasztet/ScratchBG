@@ -1,0 +1,46 @@
+// Disjoint Set Union / Union-Find: 1..n.
+list dsu_parent = [];
+list dsu_size = [];
+
+proc dsuInit(n) {
+    clearList(dsu_parent);
+    clearList(dsu_size);
+    for (let i in rangeClosed(1, n)) {
+        push(dsu_parent, i);
+        push(dsu_size, 1);
+    }
+    return n;
+}
+
+proc dsuFind(x) {
+    let p = item(dsu_parent, x);
+    if (p == x) { return x; }
+    let r = dsuFind(p);
+    setItem(dsu_parent, x, r);
+    return r;
+}
+
+proc dsuSame(a, b) { return dsuFind(a) == dsuFind(b); }
+
+proc dsuUnion(a, b) {
+    let ra = dsuFind(a);
+    let rb = dsuFind(b);
+    if (ra == rb) { return 0; }
+    if (item(dsu_size, ra) < item(dsu_size, rb)) {
+        let t = ra;
+        ra = rb;
+        rb = t;
+    }
+    setItem(dsu_parent, rb, ra);
+    setItem(dsu_size, ra, item(dsu_size, ra) + item(dsu_size, rb));
+    return 1;
+}
+
+proc dsuComponentSize(x) { return item(dsu_size, dsuFind(x)); }
+
+// Short aliases matching common competitive-programming naming.
+proc make_set(n) { return dsuInit(n); }
+proc find_set(x) { return dsuFind(x); }
+proc unite(a, b) { return dsuUnion(a, b); }
+proc same(a, b) { return dsuSame(a, b); }
+proc comp_size(x) { return dsuComponentSize(x); }
