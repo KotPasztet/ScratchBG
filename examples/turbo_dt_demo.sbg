@@ -1,4 +1,5 @@
-import "std";
+#include <std>
+using namespace std;
 
 on action(input) {
     if (input == "fixed") {
@@ -17,13 +18,13 @@ on action(input) {
 }
 
 sprite Mover {
-    import "std/sprite";
-    import "std/time";
+    #include <std/sprite>
+    #include <std/time>
+    using namespace std;
 
     on flag {
         spriteResetPosition();
         forever {
-            // Compiler injects tick() once per iteration because dt() is used here.
             changeX(80 * dt());
             if (x() > 230) { setX(-230); }
         }

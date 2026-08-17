@@ -1,23 +1,24 @@
-import "std";
+#include <std>
+using namespace std;
 
-list nums = [1, 2, 3];
-list other = [];
+vector<int> nums = {1, 2, 3};
+vector<int> other = {};
 
 on action(input) {
-    clearTerminal();
-    log("professional std demo");
+    console.clear();
+    console.log("professional std demo");
 
-    push(nums, 4);
+    nums.push_back(4);
     popTo(nums, "last");
     copyList(nums, other);
 
     mapClear();
     mapSet("input", input);
     mapSet("last", last);
-    mapSet("sum", listGet(other, 1) + listGet(other, 2) + listGet(other, 3));
+    mapSet("sum", other.at(1) + other.at(2) + other.at(3));
 
     splitByChar("alpha,beta,gamma", ",");
-    let parsed = parseInt("1234");
+    int parsed = parseInt("1234");
 
     expectEq("parseInt", parsed, 1234);
     expect("map has input", mapHas("input"));

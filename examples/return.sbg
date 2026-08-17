@@ -1,11 +1,14 @@
-proc add(a, b) {
+#include <std>
+using namespace std;
+
+int add(int a, int b) {
     return a + b;
 }
 
-proc combo(x) {
+int combo(int x) {
     return add(x, 10) * add(2, 3);
 }
 
-on action(input) {
-    log(join("combo = ", combo(7)));
+int main() {
+    return join("combo = ", combo(7));
 }

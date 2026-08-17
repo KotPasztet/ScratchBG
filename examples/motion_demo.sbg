@@ -1,15 +1,18 @@
 stage {
+    #include <std>
+    using namespace std;
+
     on action(input) {
-        clearTerminal();
+        console.clear();
         broadcast("draw.step");
         return "motion tick sent";
     }
 }
 
 sprite Dot {
-    let steps = 0;
+    int steps = 0;
 
-    proc stepOnce() {
+    string stepOnce() {
         changeX(10);
         changeY(4);
         steps += 1;
@@ -22,6 +25,6 @@ sprite Dot {
     }
 
     on message "draw.step" {
-        log(stepOnce());
+        console.log(stepOnce());
     }
 }

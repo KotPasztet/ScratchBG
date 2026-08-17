@@ -4,32 +4,34 @@ using namespace std;
 // Not a built-in OI solution. This is a sanity test made from common OI/C++
 // building blocks: vector, sort/lower_bound, DSU, Fenwick, priority_queue.
 
-on action(input) {
+int main() {
     vector<int> v = {8, 1, 5, 3, 5, 2};
-    sort(v);
+    v.sort();
 
-    int lb = lower_bound(v, 5);
-    int ub = upper_bound(v, 5);
+    int lb = v.lower_bound(5);
+    int ub = v.upper_bound(5);
 
-    make_set(5);
-    unite(1, 2);
-    unite(2, 5);
-    bool connected = same(1, 5);
+    dsu d;
+    d.init(5);
+    d.unite(1, 2);
+    d.unite(2, 5);
+    bool connected = d.same(1, 5);
 
-    fw_init(5);
-    for (int i = 1; i <= size(v) - 1; i++) {
-        fw_add(i, at(v, i));
+    fenwick fw;
+    fw.init(5);
+    for (int i = 1; i < v.size(); i++) {
+        fw.add(i, v.at(i));
     }
-    int pref3 = fw_sum(3);
+    int pref3 = fw.sum(3);
 
-    pq_clear();
+    priority_queue pq;
     for (auto x : v) {
-        pq_push(x, x);
+        pq.push(x, x);
     }
 
-    int first = pq_top();
-    pq_pop();
-    int second = pq_top();
+    int first = pq.top();
+    pq.pop();
+    int second = pq.top();
 
     if (lb == 4 && ub == 6 && connected && pref3 == 6 && first == 1 && second == 2) {
         return "OK cpp-like algorithmic surface";

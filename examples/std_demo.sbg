@@ -1,9 +1,10 @@
-import "../packages/std/main.sbg";
-
 stage {
+    #include <std>
+    using namespace std;
+
     on action(input) {
-        consoleClear();
-        printHeader("STD DEMO");
+        console.clear();
+        console.log("STD DEMO");
 
         if (input == "math") {
             return join("clamp=", clamp(120, 0, 100));
@@ -20,16 +21,14 @@ stage {
 }
 
 sprite Worker {
-    import "../packages/std/main.sbg";
-    import "../packages/std/sprite.sbg";
-    let ticks = 0;
+    int ticks = 0;
 
     on flag {
         hide();
         goToXY(0, 0);
     }
 
-    proc step() {
+    string step() {
         ticks += 1;
         changeX(10);
         changeY(5);
@@ -37,6 +36,6 @@ sprite Worker {
     }
 
     on message "worker.step" {
-        printInfo(step());
+        console.log(step());
     }
 }

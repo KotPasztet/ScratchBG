@@ -1,20 +1,30 @@
-import "bits";
+#include <bits/stdc++.h>
+using namespace std;
 
-on action(input) {
-    pqClear();
-    pqPush(30, "C");
-    pqPush(10, "A");
-    pqPush(20, "B");
+// Priority queue, DSU, and Fenwick tree via the C++-style bits library.
 
-    let out = "";
-    while (!pqEmpty()) {
-        pqPop();
-        out = join(out, pq_pop_value);
+int main() {
+    priority_queue pq;
+    pq.push(30, "C");
+    pq.push(10, "A");
+    pq.push(20, "B");
+
+    string out = "";
+    while (!pq.empty()) {
+        out = join(out, pq.top());
+        pq.pop();
     }
 
-    dsuInit(5);
-    dsuUnion(1, 2);
-    dsuUnion(2, 3);
+    dsu d;
+    d.init(5);
+    d.unite(1, 2);
+    d.unite(2, 3);
 
-    return join("pq=", join(out, join(" same13=", dsuSame(1, 3))));
+    fenwick fw;
+    fw.init(5);
+    for (int i = 1; i <= 5; i++) {
+        fw.add(i, i);
+    }
+
+    return join("pq=", join(out, join(" same13=", join(d.same(1, 3), join(" fw5=", fw.sum(5))))));
 }

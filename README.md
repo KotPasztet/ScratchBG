@@ -1,15 +1,15 @@
-# StageBG patch23 — C++-style language lowered to vanilla Scratch
+# StageBG — C++-style language lowered to vanilla Scratch
 
-StageBG is not “Scratch blocks written as text”. It is a C++-style source language that compiles higher-level programming constructs into vanilla Scratch `.sb3` projects.
+StageBG is not "Scratch blocks written as text". It is a C++-style source language that compiles higher-level programming constructs into vanilla Scratch `.sb3` projects.
 
 The goal is professional workflow:
 
 ```bash
-python3 sbg_patch23.py run examples/cpp_struct_flat_generic_demo.sbg --input go --fast
-python3 sbg_patch23.py compile examples/cpp_struct_flat_generic_demo.sbg build/structs.sb3
+python3 sbg.py run examples/cpp_struct_flat_generic_demo.sbg --input go --fast
+python3 sbg.py compile examples/cpp_struct_flat_generic_demo.sbg build/structs.sb3
 ```
 
-Open the generated `.sb3` in vanilla Scratch. For Scratch editor Turbo Mode, hold **Shift** and click the **green flag**. StageBG also emits warp/custom blocks where safe, but the editor’s global Turbo Mode is controlled by the user, not saved inside the `.sb3`.
+Open the generated `.sb3` in vanilla Scratch. For Scratch editor Turbo Mode, hold **Shift** and click the **green flag**. StageBG also emits warp/custom blocks where safe, but the editor's global Turbo Mode is controlled by the user, not saved inside the `.sb3`.
 
 ## What this project is supposed to be
 
@@ -60,9 +60,69 @@ int main() {
 
 Scratch has no structs, no nested vectors, no local variables, no return values, and no references. StageBG lowers those concepts into ordinary Scratch lists, variables, custom blocks, and generated helper logic.
 
+## The optimizer: `-O0` … `-O3`
+
+StageBG is gaining a structured IR + optimizer that sits between the lowered AST and Scratch block emission. It is exposed through `-O` / `--opt-level` on both `compile` and `run`:
+
+```bash
+python3 sbg.py compile examples/main.sbg -O3
+python3 sbg.py run examples/main.sbg -O3
+```
+
+`--opt-level` takes `{0,1,2,3}` and defaults to `0`. The levels are strictly cumulative:
+
+| Level | Behavior |
+|---|---|
+| `-O0` (default) | Today's compiler, unchanged. The generated `project.json` is **byte-identical** to a build without the optimizer — patch-order effects, warp mutations, and the Terminal monitor id included. |
+| `-O1` | Safe, intra-procedure passes: constant folding/propagation, strength-reduction of the nested-vector `at0`/`vec_size` string-scanner helpers, join/string-concat fusion, and dead-code elimination. |
+| `-O2` | Adds structural memory passes: struct SROA + dead-field elimination, dead list/variable elimination, small-proc inlining under a block budget, and loop-invariant hoisting. |
+| `-O3` | Aggressive and Scratch-cost-targeted: SoA flat-list fusion for `vector<vector<Struct>>`, bounded vector-to-scalar promotion, warp/turbo placement analysis, and terminal-output minimization. |
+
+`run` keeps its compile-then-run guarantee and passes the level through, so `sbg run -O3` verifies the optimized project still compiles to Scratch before executing natively.
+
+Key passes, and the vanilla-Scratch cost each one attacks:
+
+- **struct SROA / dead-field elimination** — removes unused flattened `name.field` variables (each variable costs an init block, a monitor, and storage);
+- **vector / `vector<Struct>` SoA + flat lists** — row-size elision and index demotion for the nested-vector flat field tables;
+- **dead list/variable elimination** — drops lists and variables whose contents are never read, while never touching `Terminal`, the embedded-file tables, Action return vars, or anything the user exposes via `showList`/`showVariable`;
+- **constant folding + DCE** — removes constant reporters and dead control-flow stacks;
+- **small-proc inlining with a block budget** — inlines only when the block count strictly decreases (never a size increase), and never across warp/timing boundaries;
+- **loop-invariant hoisting** — moves invariant work out of `forever`/`while`/`repeat`, the dominant per-frame win in game loops;
+- **string/join fusion** — collapses `join` chains at compile time;
+- **warp/turbo placement** — keeps warp on pure custom blocks and records which procs are pure, giving `--no-turbo` a factual basis without de-warping hot pure procs;
+- **terminal-output minimization** — batching of consecutive `Terminal` appends.
+
+The philosophy: this is **not a GCC copy**. The optimizer targets vanilla Scratch's real costs — block count, list/variable count, monitor count, warp/turbo placement, terminal output volume, and per-frame cost. `-O3` never changes program semantics: for every program, the native runner's output at `-O3` is identical to `-O0`.
+
+### `--opt-terminal-batch` (opt-in, O3 only)
+
+The one pass that changes observable output shape (Terminal list item granularity) is **off by default even at `-O3`** and enabled only by `--opt-terminal-batch` on `compile`. Consecutive `Terminal` appends are merged into a single joined append with a sentinel separator, and the native runner's log mirror is taught to split that sentinel, keeping native stdout byte-identical while reducing Scratch list-append blocks and Terminal monitor churn:
+
+```bash
+python3 sbg.py compile examples/terminal_visibility_demo.sbg build/t.sb3 -O3 --opt-terminal-batch
+```
+
+The authoritative spec for the IR, the full pass catalog, and the regression gates is [`docs/optimizer-design.md`](docs/optimizer-design.md).
+
+## Package layout
+
+The compiler was split from a single `sbg.py` into a clean `sbg/` package. The root `sbg.py` is now a **thin CLI shim** so `python3 sbg.py ...` keeps working exactly as it did before:
+
+- `sbg/globals.py` — shared constants and the late-bound patched entry points (`VERSION`, builtin tables, `Terminal` list identity).
+- `sbg/errors.py` — the exception hierarchy (`LexError`, `ParseError`, `CompileError`, `RuntimeSBGError`, `ImportSBGError`, `PackageError`) and diagnostic formatting.
+- `sbg/ast.py` — the lexer and AST node dataclasses.
+- `sbg/parser.py` — the parser and import resolution; source text → `Program`.
+- `sbg/scratch.py` — `ScratchBuilder`, the low-level Scratch block JSON emitter.
+- `sbg/compiler.py` — `Compiler` (AST → `.sb3` project dict) plus the `inspect`/`unpack`/`write` helpers.
+- `sbg/runtime.py` — the native Python interpreter used by `sbg run`.
+- `sbg/packages.py` — the SBG package manager (`sbg pkg init/install/list/remove`).
+- `sbg/cli.py` — the argparse CLI surface (`run`/`compile`/`inspect`/`unpack`/`pkg`).
+- `sbg/_patches.py` — the layered monkeypatch chain that assembles the final compiler behavior; imported at package import time and re-exporting the patched public API.
+- `sbg/__init__.py` — imports the patch chain (which runs on import) and publishes `main` / `VERSION`.
+
 ## Terminal API: dynamic visibility and prompt control
 
-Patch23 adds runtime control over the fullscreen terminal list and the `ask and wait` input prompt.
+StageBG adds runtime control over the fullscreen terminal list and the `ask and wait` input prompt.
 
 ```cpp
 terminal.hide();        // hide Terminal list monitor
@@ -91,11 +151,13 @@ console.showAll();
 
 Important vanilla Scratch detail: an already-open `ask and wait` bubble cannot be closed mid-question. `hidePrompt()` prevents the **next** prompt from appearing. This is the clean Scratch-compatible way to pause console input while a program runs its own UI, animation, cutscene, menu, or background process.
 
+Hiding the prompt is a real gate in the generated `.sb3`, not just a native-mode convenience: while input is disabled, the project skips the `ask and wait` block entirely.
+
 Demo:
 
 ```bash
-python3 sbg_patch23.py run examples/terminal_visibility_demo.sbg --input status --fast
-python3 sbg_patch23.py compile examples/terminal_visibility_demo.sbg build/terminal_visibility_demo.sb3
+python3 sbg.py run examples/terminal_visibility_demo.sbg --input status --fast
+python3 sbg.py compile examples/terminal_visibility_demo.sbg build/terminal_visibility_demo.sb3
 ```
 
 ## Generic features implemented
@@ -239,44 +301,13 @@ Includes generic structures such as priority queue, deque, stack, queue, DSU, Fe
 Scratch cannot read arbitrary files at runtime, so StageBG embeds files into Scratch lists while compiling:
 
 ```bash
-python3 sbg_patch23.py compile examples/files_kv_demo.sbg build/files.sb3 --embed data/config.txt:config.txt
-python3 sbg_patch23.py run examples/files_kv_demo.sbg --input go --embed data/config.txt:config.txt
+python3 sbg.py compile examples/files_kv_demo.sbg build/files.sb3 --embed data/config.txt:config.txt
+python3 sbg.py run examples/files_kv_demo.sbg --input go --embed data/config.txt:config.txt
 ```
 
 Then code can read from the embedded virtual file table.
 
-## Vanilla Scratch limits
-
-StageBG should fail with a compiler error when something cannot be represented safely in vanilla Scratch. Current target is a practical C++ subset, not full ISO C++.
-
-Unsupported or limited:
-
-- raw pointers,
-- references with aliasing semantics,
-- inheritance,
-- exceptions,
-- full templates,
-- arbitrary STL internals,
-- true runtime file I/O,
-- true object memory model.
-
-Supported direction:
-
-- simple C++-style algorithmic code,
-- `vector`, nested `vector`, struct values,
-- returns,
-- loops,
-- `break` / `continue`,
-- methods via dot syntax,
-- std/bits style libraries,
-- dynamic terminal/prompt control,
-- vanilla Scratch compilation.
-
-## Patch23 correction
-
-Patch23 adds a real Scratch-compatible input-gate around the generated terminal loop. Hiding the prompt no longer means “just ignore input in native mode”; the generated `.sb3` skips the `ask and wait` block while input is disabled.
-
-## Patch24 — keyboard / key handling
+## Keyboard / key handling
 
 StageBG supports vanilla Scratch keyboard input in two forms.
 
@@ -340,7 +371,35 @@ space, any, up arrow, down arrow, left arrow, right arrow, enter
 The native Python runner is headless, so it cannot read live keyboard state while running a Scratch-style polling expression. For tests, set `SBG_KEYS`:
 
 ```bash
-SBG_KEYS="space,left arrow" python3 sbg_patch24.py run examples/keyboard_demo.sbg --input go --fast
+SBG_KEYS="space,left arrow" python3 sbg.py run examples/keyboard_demo.sbg --input go --fast
 ```
 
 The same code compiles to real live keyboard sensing in Scratch.
+
+## Vanilla Scratch limits
+
+StageBG should fail with a compiler error when something cannot be represented safely in vanilla Scratch. Current target is a practical C++ subset, not full ISO C++.
+
+Unsupported or limited:
+
+- raw pointers,
+- references with aliasing semantics,
+- inheritance,
+- exceptions,
+- full templates,
+- arbitrary STL internals,
+- true runtime file I/O,
+- true object memory model.
+
+Supported direction:
+
+- simple C++-style algorithmic code,
+- `vector`, nested `vector`, struct values,
+- returns,
+- loops,
+- `break` / `continue`,
+- methods via dot syntax,
+- std/bits style libraries,
+- dynamic terminal/prompt control,
+- keyboard polling and key event hats,
+- vanilla Scratch compilation.

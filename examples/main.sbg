@@ -1,14 +1,13 @@
-import "../packages/console.sbg";
-import "../packages/math.sbg";
-import "../packages/string.sbg";
-
 stage {
-    proc answerFor(text) {
+    #include <std>
+    using namespace std;
+
+    string answerFor(string text) {
         if (text == "hello") {
             return "czesc, dzialam w Scratchu i natywnie";
         }
         if (text == "2+2") {
-            return 4;
+            return "4";
         }
         if (text == "worker") {
             broadcast("worker.tick");
@@ -23,17 +22,17 @@ stage {
 }
 
 sprite Worker {
-    let counter = 0;
-    list history = [];
+    int counter = 0;
+    vector<int> history = {};
 
-    proc nextValue() {
+    int nextValue() {
         counter += 1;
-        push(history, counter);
+        history.push_back(counter);
         return counter;
     }
 
     on message "worker.tick" {
-        let value = nextValue();
-        log(join("worker value = ", value));
+        int value = nextValue();
+        console.log(join("worker value = ", value));
     }
 }

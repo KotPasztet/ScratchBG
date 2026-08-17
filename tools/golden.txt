@@ -1,0 +1,21 @@
+bits_demo :: pq=ABC same13=True fw5=15
+cpp_nested_vector_demo :: 11
+cpp_nested_vector_generic_demo :: sum=60 changed=25
+cpp_simple_subset_demo :: sum=25 pq=ABC
+cpp_struct_flat_generic_demo :: edges=2 total=18 changed=15
+cpp_surface_demo :: sum=15 p=3 has4=1 pq=ABC
+dot_methods_demo :: n=4 p=3 pq=ABC
+files_demo :: FILES DEMO count=0
+files_kv_demo :: level=1 keys=0
+foreach_range_demo :: sum=15 squares=55.0 sorted=1 2 3 4 5
+keyboard_demo :: no key
+main :: nie znam komendy: go
+motion_demo :: Dot x=10.0 y=4.0 motion tick sent
+oi_port_sanity :: OK cpp-like algorithmic surface
+pen_demo :: Pen demo: drawing is done by invisible sprite Painter. ok
+pro_std_demo :: professional std demo [PASS] parseInt
+return :: combo = 85.0
+sprites :: stage: start WorkerA count = 101
+std_demo :: STD DEMO unknown: go
+terminal_visibility_demo :: echo: go
+turbo_dt_demo :: frame=1.0

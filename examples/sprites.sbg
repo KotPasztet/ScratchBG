@@ -1,24 +1,27 @@
 stage {
+    #include <std>
+    using namespace std;
+
     on action(input) {
-        log("stage: start");
+        console.log("stage: start");
         broadcast("job");
     }
 }
 
 sprite WorkerA {
-    let count = 0;
+    int count = 0;
 
     on message "job" {
         count += 1;
-        log(join("WorkerA count = ", count));
+        console.log(join("WorkerA count = ", count));
     }
 }
 
 sprite WorkerB {
-    let count = 100;
+    int count = 100;
 
     on message "job" {
         count += 10;
-        log(join("WorkerB count = ", count));
+        console.log(join("WorkerB count = ", count));
     }
 }

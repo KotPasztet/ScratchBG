@@ -1,27 +1,29 @@
-import "std";
+#include <std>
+using namespace std;
 
-list xs = [5, 1, 4, 2, 3];
+// Range-for and index-range iteration over vectors.
 
-on action(input) {
-    let sum = 0;
+int main() {
+    vector<int> xs = {5, 1, 4, 2, 3};
 
-    for (let x in xs) {
+    int sum = 0;
+    for (auto x : xs) {
         sum += x;
     }
 
-    let indexed = "";
-    for (let i, x in xs) {
-        indexed = join(indexed, join("[", join(i, join(":", join(x, "]")))));
+    string indexed = "";
+    for (int i = 1; i <= xs.size(); i++) {
+        indexed = join(indexed, join("[", join(i, join(":", join(xs.at(i), "]")))));
     }
 
-    let squares = 0;
-    for (let i in range(1, 6)) {
+    int squares = 0;
+    for (int i : range(1, 6)) {
         squares += i * i;
     }
 
-    sortAsc(xs);
-    let sorted = "";
-    for (let x in xs) {
+    xs.sort();
+    string sorted = "";
+    for (auto x : xs) {
         sorted = join(sorted, join(x, " "));
     }
 

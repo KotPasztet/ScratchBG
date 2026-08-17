@@ -1,2 +1,7 @@
 # Test files
 test.sbg
+
+# Build artifacts
+__pycache__/
+*.pyc
+compiled/*.sb3

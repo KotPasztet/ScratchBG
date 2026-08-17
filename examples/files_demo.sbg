@@ -1,11 +1,12 @@
-import "../packages/std/main.sbg";
+#include <std>
+using namespace std;
 
-on action(input) {
-    printHeader("FILES DEMO");
-    log(join("count=", fileCount()));
-    log(join("exists=", fileExists("config.txt")));
-    log(join("size=", fileSize("config.txt")));
-    log(join("line1=", fileReadLine("config.txt", 1)));
-    log(join("has vanilla=", fileContains("config.txt", "vanilla")));
-    return fileReadAll("config.txt");
+int main() {
+    console.log("FILES DEMO");
+    console.log(join("count=", files.count()));
+    console.log(join("exists=", files.exists("config.txt")));
+    console.log(join("size=", files.size("config.txt")));
+    console.log(join("line1=", files.read_line("config.txt", 1)));
+    console.log(join("has vanilla=", files.contains("config.txt", "vanilla")));
+    return files.read("config.txt");
 }
