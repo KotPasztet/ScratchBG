@@ -3,12 +3,12 @@ let PI = 3.141592653589793;
 let E = 2.718281828459045;
 let TAU = 6.283185307179586;
 
-proc min2(a, b) {
+proc min(a, b) {
     if (a < b) { return a; }
     return b;
 }
 
-proc max2(a, b) {
+proc max(a, b) {
     if (a > b) { return a; }
     return b;
 }
