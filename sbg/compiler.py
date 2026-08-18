@@ -32,6 +32,7 @@ class Compiler:
         self.action_entries: List[Tuple[str, List[Any]]] = []
         self.action_param_names: set[str] = {"Input"}
         self.action_argid: Optional[str] = None
+        self.const_variables: set[str] = set()  # CRITICAL FIX: pkt 9 - track const variables
 
     def compile_error(self, message: str, node: Any = None) -> CompileError:
         err = CompileError(message)
@@ -66,6 +67,9 @@ class Compiler:
                 if stmt.name in globals_seen:
                     raise self.compile_error(f"duplicate global name {stmt.name!r}", stmt)
                 globals_seen[stmt.name] = stmt
+                # CRITICAL FIX: pkt 9 - track const variables (mutable=False)
+                if not stmt.mutable:
+                    self.const_variables.add(stmt.name)
                 self.b.var_id(stmt.name)
                 self.init_values[stmt.name] = self.literal_value_or_zero(stmt.expr)
             elif isinstance(stmt, ListDecl):
@@ -267,6 +271,8 @@ class Compiler:
 
     def compile(self) -> Dict[str, Any]:
         self.analyze()
+        # CRITICAL FIX: pkt 9 - pass const_variables to ScratchBuilder
+        self.b.const_variables = self.const_variables
         self.action_argid = self.b.uid("arg")
 
         # User procedures first so Action(Input) and message handlers can call them.

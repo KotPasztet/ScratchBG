@@ -1,0 +1,7 @@
+// The `scratch` library.
+//
+// Unlike `std`, the names gated by `scratch::x` (move, say, penDown, broadcast,
+// ...) are not implemented in .sbg here -- they compile directly to native
+// Scratch blocks (see sbg/compiler.py). This file's only job is to exist, so
+// that `import "scratch";` is a real, resolvable import and `scratch::name`
+// is gated by Parser._check_namespace_import instead of always working.

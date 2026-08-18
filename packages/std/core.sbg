@@ -7,6 +7,19 @@ proc bool(value) {
     return 0;
 }
 
+// Migrated from native (sbg/_patches.py) to a real `.sbg proc` this session.
+// Boolean-shapedness for `if (bool01(x)) {...}` is preserved across the
+// value-lowering pass by a dedicated mechanism in sbg/_patches.py
+// (_builder_lower_expr tags the lowered temp var when is_boolean_expr
+// recognized the pre-lowering call by name) -- see kontekst.md, this was
+// previously blocked because a plain proc call used to silently lose its
+// boolean CONDITION shape ([2,...] -> [1,...]) once lowered to a temp-var
+// reporter. Do not remove "bool01" from the is_boolean_expr name check in
+// _patches.py without re-verifying the .sb3 CONDITION shape manually.
+proc bool01(value) {
+    return bool(value);
+}
+
 proc not(value) {
     if (value) {
         return 0;
@@ -64,4 +77,37 @@ proc choose01(value, falseValue, trueValue) {
         return trueValue;
     }
     return falseValue;
+}
+
+// C++-stdlib-flavored numeric coercion/parsing. Real `.sbg proc`s -- these
+// used to be native aliases in sbg/_patches.py (compiled the same "value + 0"
+// trick), duplicated the same "runs before import" bug that str/to_string
+// had (see kontekst.md). Migrated in this session; regress.sh verified PASS.
+// NOTE: uses "* 1", not "+ 0", for numeric coercion -- the interpreter's "+"
+// does JS-like string concatenation when either operand is a string (see
+// sbg/runtime.py eval() BinaryExpr "+"), so "value + 0" silently returns a
+// *string* like "3.750" for interpreted runs instead of coercing to a
+// number, even though it compiles correctly to Scratch's operator_add (which
+// always numeric-coerces). "*"/"-"/"/" all go through self.num() in the
+// interpreter, so they don't have this gap. Found + fixed empirically this
+// session; if touching this again, verify BOTH `sbg.py run` and
+// `sbg.py compile`, not just regress.sh (regress currently has zero
+// num/stoi/stod coverage, see "do zrobienia" below).
+proc num(value) {
+    return value * 1;
+}
+
+proc stod(value) {
+    return value * 1;
+}
+
+// Truncate-toward-zero, like C++ std::stoi (not floor, which rounds toward
+// -infinity and would be wrong for negative inputs, e.g. stoi("-3.7") must
+// give -3, not -4).
+proc stoi(value) {
+    let n = value * 1;
+    if (n < 0) {
+        return 0 - floor(0 - n);
+    }
+    return floor(n);
 }

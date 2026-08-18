@@ -22,6 +22,7 @@ class ScratchBuilder:
         self.x = 40
         self.y = 40
         self.current_proc_params: Dict[str, str] = {}
+        self.const_variables: set[str] = set()  # CRITICAL FIX: pkt 9 - track const variables
 
     def uid(self, prefix: str = "b") -> str:
         self.counter += 1
@@ -284,6 +285,9 @@ class ScratchBuilder:
                 chain = self.chain(chain, add) or chain
             return first
         if isinstance(stmt, AssignStmt):
+            # CRITICAL FIX: pkt 9 - check if trying to assign to const variable
+            if stmt.name in self.const_variables:
+                raise CompileError(f"cannot assign to const variable {stmt.name!r}")
             self.var_id(stmt.name)
             if stmt.op == "+=":
                 bid = self.add_block("data_changevariableby", fields={"VARIABLE": [stmt.name, self.var_id(stmt.name)]}, inputs={})
@@ -485,4 +489,3 @@ class ScratchBuilder:
         if body_first:
             self.blocks[body_first]["parent"] = def_id
         return def_id
-

@@ -1,10 +1,63 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from .errors import LexError
 from .globals import KEYWORDS, MULTI, SINGLE
+
+
+def _sbg_preprocess_cpp_surface(text: str) -> str:
+    """Tiny compile-time preprocessor for C++-style include ergonomics.
+
+    Supported:
+        #include <bits/stdc++.h>  -> import "bits";
+        #include <std>            -> import "std";
+        #include "lib/foo.sbg"    -> import "lib/foo.sbg";
+        using namespace std;      -> ignored
+
+    It is intentionally small; this is not a C++ preprocessor.
+    """
+    out: List[str] = []
+    include_re = re.compile(r"^\s*#\s*include\s*([<\"])([^>\"]+)[>\"]\s*$")
+    using_re = re.compile(r"^\s*using\s+namespace\s+std\s*;\s*$")
+    for line in text.splitlines():
+        m = include_re.match(line)
+        if m:
+            quote, spec = m.group(1), m.group(2).strip()
+            if spec == "bits/stdc++.h":
+                out.append('import "bits";')
+            elif spec in {"std", "std.sbg"}:
+                out.append('import "std";')
+            elif spec in {"bits", "bits.sbg"}:
+                out.append('import "bits";')
+            else:
+                # Quoted include keeps path semantics.  Angle include becomes package import.
+                if quote == '"':
+                    out.append(f'import "{spec}";')
+                else:
+                    pkg = spec[:-4] if spec.endswith('.sbg') else spec
+                    out.append(f'import "{pkg}";')
+            continue
+        if using_re.match(line):
+            out.append("// using namespace std; ignored by StageBG")
+            continue
+        out.append(line)
+    return "\n".join(out)
+
+
+def _sbg_cpp_preprocess_patch20(text: str) -> str:
+    # Keep the patch18 include preprocessor. NOTE: this used to also strip
+    # "std::" from the raw text here, before tokenization -- which made
+    # std:: work even with no `import "std";`/`#include` anywhere in the
+    # file, since the parser never even saw the prefix. That has been
+    # removed: `std::` now reaches the parser as real `IDENT "::" IDENT`
+    # tokens, same as `scratch::`, and is gated by
+    # Parser._check_namespace_import (see parser.py).
+    text = _sbg_preprocess_cpp_surface(text)
+    return text
+
 
 @dataclass
 class Token:
@@ -19,6 +72,7 @@ class Token:
 
 class Lexer:
     def __init__(self, text: str, filename: str = "<source>"):
+        text = _sbg_cpp_preprocess_patch20(text)
         self.text = text
         self.filename = filename
         self.i = 0
@@ -252,4 +306,35 @@ class CallExpr:
 @dataclass
 class ArrayExpr:
     items: List[Any]
+
+
+@dataclass
+class TargetDecl:
+    kind: str  # "stage" or "sprite"
+    name: str
+    body: List[Any]
+
+@dataclass
+class LValueAssignStmt:
+    op: str
+    target: Any
+    expr: Any
+
+@dataclass
+class StructDecl:
+    name: str
+    fields: List[Tuple[str, str]]  # (type, field_name)
+
+@dataclass
+class StructVarDecl:
+    typ: str
+    name: str
+    init: Any = None
+
+@dataclass
+class NestedVectorDecl:
+    name: str
+    typ: str
+    rows: List[Any]
+
 

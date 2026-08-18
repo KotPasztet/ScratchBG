@@ -61,6 +61,15 @@ proc hypot2(dx, dy) { return sqrt((dx * dx) + (dy * dy)); }
 proc distance2D(x1, y1, x2, y2) { return hypot2(x2 - x1, y2 - y1); }
 proc floorDiv(a, b) { return floor(a / b); }
 
+// Real `.sbg proc` -- used to be native in sbg/_patches.py, but its
+// compile_call_expr branch referenced a builtin "max" that was never actually
+// implemented anywhere, so `rangeLen()` used in expression position was
+// silently broken for `sbg.py compile` (CompileError: function max cannot be
+// used as an expression). Fixed by migrating in this session; see kontekst.md.
+proc rangeLen(fromIdx, toIdx) {
+    return max2(0, toIdx - fromIdx);
+}
+
 proc positiveMod(a, b) {
     let r = a % b;
     if (r < 0) { return r + b; }

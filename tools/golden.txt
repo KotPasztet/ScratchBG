@@ -17,5 +17,6 @@ pro_std_demo :: professional std demo [PASS] parseInt
 return :: combo = 85.0
 sprites :: stage: start WorkerA count = 101
 std_demo :: STD DEMO unknown: go
+std_migrated_demo :: 42 7
 terminal_visibility_demo :: echo: go
 turbo_dt_demo :: frame=1.0

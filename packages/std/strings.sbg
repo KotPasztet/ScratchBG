@@ -3,6 +3,12 @@ proc str(value) {
     return join("", value);
 }
 
+// C++-style alias for str(). Real .sbg proc, not a native builtin -- see
+// kontekst.md for why this used to silently disagree with the compiler.
+proc to_string(value) {
+    return str(value);
+}
+
 proc charAt(text, index) {
     return letter(text, index);
 }

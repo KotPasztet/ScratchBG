@@ -1,0 +1,21 @@
+// Exercises the std:: functions migrated from native (_patches.py) to real
+// .sbg procs this session: str, to_string, num, stod, stoi, rangeLen.
+// See kontekst.md "Sesja kontynuacyjna #3" for why these needed a dedicated
+// example (they had zero regress.sh coverage before, which is how the
+// rangeLen bug and the str/to_string compile-vs-run split went unnoticed).
+import "std";
+
+proc main() {
+    log(str(42));
+    log(std::to_string(7));
+    log(num("3.5"));
+    log(stod("2.25"));
+    log(stoi("9.75"));
+    log(stoi("-9.75"));
+    log(rangeLen(2, 10));
+    log(rangeLen(10, 2));
+}
+
+on flag {
+    main();
+}

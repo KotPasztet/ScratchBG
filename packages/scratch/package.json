@@ -1,0 +1,6 @@
+{
+  "name": "scratch",
+  "version": "0.1.0",
+  "main": "main.sbg",
+  "description": "Marker/gate library for the `scratch::name` builtin namespace prefix. The actual blocks are emitted natively by the compiler (motion/looks/sound/pen/sensing/control/variable ops) -- this package exists so `scratch::x` requires `import \"scratch\";` first, same as std:: requires `import \"std\";`."
+}

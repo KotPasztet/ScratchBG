@@ -32,3 +32,12 @@ proc testSummary() {
     log(join("tests passed=", join(test_passed, join(" failed=", test_failed))));
     return test_failed == 0;
 }
+
+proc assertTrue(cond, message) {
+    // SUGESTIA: pkt 10 - assert helper for easy testing
+    if (!cond) {
+        log(join("ASSERT FAILED: ", message));
+        return 0;
+    }
+    return 1;
+}
