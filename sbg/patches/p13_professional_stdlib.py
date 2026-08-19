@@ -339,7 +339,14 @@ def _parse_embed_ref(ref: str, base: Path) -> Tuple[Path, str]:
         path = Path(ref)
         virtual = path.name
     if not path.is_absolute():
-        path = base / path
+        # BUGS_REPORT #8: resolve relative paths against the process CWD first
+        # (like gcc -I), falling back to the .sbg source directory for
+        # backwards compatibility with old invocations run from the source dir.
+        cwd_candidate = Path.cwd() / path
+        if cwd_candidate.exists():
+            path = cwd_candidate
+        else:
+            path = base / path
     virtual = virtual.strip().replace("\\", "/").lstrip("/")
     if not virtual:
         virtual = path.name
@@ -357,7 +364,12 @@ def _collect_embedded_files(source_path: Union[str, Path], refs: Optional[List[s
     for dref in dirs or []:
         dpath = Path(dref)
         if not dpath.is_absolute():
-            dpath = base / dpath
+            # BUGS_REPORT #8: CWD-first resolution, fallback to source dir.
+            cwd_candidate = Path.cwd() / dpath
+            if cwd_candidate.exists():
+                dpath = cwd_candidate
+            else:
+                dpath = base / dpath
         dpath = dpath.resolve()
         if not dpath.is_dir():
             raise CompileError(f"embedded directory does not exist: {dpath}")

@@ -511,7 +511,12 @@ class Parser:
             then_body = self.parse_block()
             else_body: Optional[List[Any]] = None
             if self.match_kw("else"):
-                else_body = self.parse_block()
+                # C-style `else if (...) { ... }` chains: parse the nested if
+                # recursively instead of requiring `{` directly after `else`.
+                if self.kind("KW", "if"):
+                    else_body = [self.parse_statement()]
+                else:
+                    else_body = self.parse_block()
             return self.loc(IfStmt(cond, then_body, else_body), start_token)
         if self.match_kw("repeat"):
             self.expect("(")
@@ -794,6 +799,11 @@ class Parser:
                 return self.loc(node, start_token)
             node = ListDecl(name, [])
             setattr(node, "sbg_type", typ)
+            # BUGS_REPORT #6: keep the non-array initializer (e.g. a proc call)
+            # so the post-parse type check can diagnose mismatches instead of
+            # silently dropping it.
+            if has_real_init:
+                setattr(node, "sbg_init", init)
             return self.loc(node, start_token)
 
         node = VarDecl(name, init, True)
@@ -1503,7 +1513,60 @@ class ImportResolver:
         except OSError:
             return path.absolute()
 
+def _sbg_collect_proc_return_types(body: List[Any], out: Dict[str, str]) -> None:
+    # BUGS_REPORT #6: gather {proc_name: return_type} for the declaration
+    # type check. Only procs with an annotated return type participate.
+    for stmt in body:
+        if isinstance(stmt, ProcDecl):
+            rt = getattr(stmt, "return_type", None)
+            if rt:
+                out[stmt.name] = _sbg_norm_type21(rt)
+        if isinstance(stmt, TargetDecl):
+            _sbg_collect_proc_return_types(stmt.body, out)
+        elif isinstance(stmt, (EventDecl, ProcDecl, BlockStmt)):
+            _sbg_collect_proc_return_types(stmt.body, out)
+        elif isinstance(stmt, IfStmt):
+            _sbg_collect_proc_return_types(stmt.then_body, out)
+            if stmt.else_body is not None:
+                _sbg_collect_proc_return_types(stmt.else_body, out)
+        elif isinstance(stmt, (RepeatStmt, ForeverStmt, WhileStmt, ForStmt)):
+            _sbg_collect_proc_return_types(stmt.body, out)
+
+
+def _sbg_check_vector_init_types(body: List[Any], proc_types: Dict[str, str]) -> None:
+    # BUGS_REPORT #6: `vector<T> x = someProc(...)` must not compile silently
+    # when someProc is known to return a scalar (int/string/...).
+    for stmt in body:
+        if isinstance(stmt, ListDecl):
+            init = getattr(stmt, "sbg_init", None)
+            typ = getattr(stmt, "sbg_type", None)
+            if typ and _sbg_is_vector21(typ) and isinstance(init, CallExpr):
+                rt = proc_types.get(init.callee)
+                if rt and not _sbg_is_vector21(rt):
+                    raise ParseError(
+                        f"{getattr(stmt, 'filename', '<source>')}:{getattr(stmt, 'line', 1)}:{getattr(stmt, 'col', 1)}: "
+                        f"type mismatch: cannot assign proc '{init.callee}' returning '{rt}' "
+                        f"to variable '{stmt.name}' of type '{typ}'"
+                    )
+        if isinstance(stmt, TargetDecl):
+            _sbg_check_vector_init_types(stmt.body, proc_types)
+        elif isinstance(stmt, (EventDecl, ProcDecl, BlockStmt)):
+            _sbg_check_vector_init_types(stmt.body, proc_types)
+        elif isinstance(stmt, IfStmt):
+            _sbg_check_vector_init_types(stmt.then_body, proc_types)
+            if stmt.else_body is not None:
+                _sbg_check_vector_init_types(stmt.else_body, proc_types)
+        elif isinstance(stmt, (RepeatStmt, ForeverStmt, WhileStmt, ForStmt)):
+            _sbg_check_vector_init_types(stmt.body, proc_types)
+
+
 def parse_source(text: str, filename: str = "<source>") -> Program:
-    return ImportResolver().parse_entry(text, filename)
+    program = ImportResolver().parse_entry(text, filename)
+    # BUGS_REPORT #6: post-parse type check for vector declarations whose
+    # initializer is a call to a proc with a known scalar return type.
+    proc_types: Dict[str, str] = {}
+    _sbg_collect_proc_return_types(program.body, proc_types)
+    _sbg_check_vector_init_types(program.body, proc_types)
+    return program
 
 _g.parse_source = parse_source

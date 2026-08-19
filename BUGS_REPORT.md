@@ -138,6 +138,8 @@ naprawy.
 
 ## 🔴 2. KRYTYCZNE: `len()` w natywnym `sbg run` zgaduje, że string to zserializowany wektor — psuje długość dla wielu znaków
 
+> **[NAPRAWIONE 2026-08-19]** Heurystyka `len()` poprawiona — `len("hello") == 5` w natywnym `sbg run` (zweryfikowane testem; długość zwykłych stringów i wektorów liczona poprawnie).
+
 ### Macierz reprodukcji
 | zawartość stringu | oczekiwana długość | zwrócona `len()` |
 |---|---|---|
@@ -289,6 +291,8 @@ Python) — C++ dla `int` obcina w stronę zera, więc dla liczb ujemnych
 
 ## 🟡 5. ŚREDNIE: niespójne formatowanie liczb (`5` vs `610.0`)
 
+> **[NAPRAWIONE 2026-08-19]** Formatowanie spójne jak w C++ — liczby całkowite wypisywane bez `.0` (test: `cout << 5 << " " << 610.0 << " " << 3.5 << " " << 7/2` → `5 610 3.5 3.5`).
+
 `len("hello")` → `"5"`, ale `fib(15)` (wynik arytmetyki użytkownika,
 rekurencja z `int`) → `"610.0"`. Brak jednej reguły "kiedy liczba całkowita
 dostaje `.0`, a kiedy nie" utrudnia pisanie kodu, który wypisuje wyniki
@@ -306,6 +310,8 @@ programista i tak oczekuje, patrząc na Scratcha.
 ---
 
 ## 🟡 6. ŚREDNIE: `vector<string> x = splitByChar(...)` kompiluje się mimo błędnego typu
+
+> **[NAPRAWIONE 2026-08-19]** Dodany check zgodności typu przy deklaracji: `vector<T> x = proc(...)` gdzie proc ma adnotowany skalarowy typ zwracany → `ParseError` z lokalizacją plik:linia:kol. `splitByChar` ma teraz adnotację `int` (typu zwracanego). Poprawny kod (`int n = splitByChar(...)`, `vector<int> v = [1,2,3]`) działa bez zmian.
 
 `splitByChar` (`packages/std/text.sbg:79`) zwraca `int` (liczbę elementów) i
 pisze wynik do globalnej listy `str_split_res` — to nie jest
@@ -403,6 +409,8 @@ zamiast łatać osobno dostęp-do-pola i osobno kopię-całej-struktury.
 ---
 
 ## 🟢 8. DROBNE: `--embed` rozwiązuje ścieżkę względem katalogu pliku `.sbg`, nie względem CWD
+
+> **[NAPRAWIONE 2026-08-19]** Ścieżki relatywne `--embed`/`--embed-dir` rozwiązują się względem CWD procesu (jak `gcc -I`), z fallbackiem do katalogu pliku `.sbg` dla kompatybilności wstecznej (fix w `sbg/patches/p13_professional_stdlib.py`, `_parse_embed_ref`/`_collect_embedded_files`).
 
 ```
 python3 sbg.py run examples/plik.sbg --embed examples/data/x.html:x.html

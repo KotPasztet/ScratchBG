@@ -76,7 +76,7 @@ proc trim(textValue) {
     return trimRight(trimLeft(textValue));
 }
 
-proc splitByChar(textValue, separator) {
+int splitByChar(textValue, separator) {
     clearList(str_split_res);
     let current = "";
     for (let i = 1; i <= len(textValue); i += 1) {

@@ -220,8 +220,10 @@ def _parser_parse_cpp_decl_or_func_patch20(self: Parser, start_token: Token) -> 
 
     # Plain declaration.
     init: Any = _sbg_default_for_type21(typ)
+    _has_real_init21 = False
     if self.match("="):
         init = _parser_parse_cpp_initializer_patch20(self)
+        _has_real_init21 = True
     self.expect(";")
 
     if typ in _SBG_STRUCT_DEFS21:
@@ -247,6 +249,11 @@ def _parser_parse_cpp_decl_or_func_patch20(self: Parser, start_token: Token) -> 
             return self.loc(node, start_token)
         node = ListDecl(name, [])
         setattr(node, "sbg_type", typ)
+        # BUGS_REPORT #6: keep the non-array initializer (e.g. a proc call)
+        # so the post-parse type check can diagnose mismatches instead of
+        # silently dropping it.
+        if _has_real_init21:
+            setattr(node, "sbg_init", init)
         return self.loc(node, start_token)
 
     node = VarDecl(name, init, True)
