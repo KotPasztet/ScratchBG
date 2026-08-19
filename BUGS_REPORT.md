@@ -445,6 +445,15 @@ jawny opis "`path` jest rozwiązywana względem katalogu pliku źródłowego
 
 ## 🟠 9. POWAŻNE: `const` jest parsowane, ale nigdy nie wymuszane
 
+[NAPRAWIONE 2026-08-19] Patch `sbg/patches/p26_const_enforcement.py` +
+`p21a_structs_core.py`: `const` jest wycinane z typu (wcześniej dawało
+"constint" i wszystkie checki typu chybiały) i flagowane jako
+`VarDecl(mutable=False)`; post-parse walidacja rzuca
+`CompileError: cannot assign to const variable '<nazwa>'` (z lokacją) dla
+`X = ...`, `X += ...`, `X++`, `cin >> X`, pętli for-update i compound-targetów.
+Shadowing działa (mangler daje lokalnym świeże nazwy). Ograniczenie:
+`const vector<T>` nieegzekwowane (listy nie mają flagi mutable).
+
 ```sbg
 const int MAX = 10;
 MAX = 5;

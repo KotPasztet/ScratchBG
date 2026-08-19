@@ -166,7 +166,14 @@ def _parser_parse_cpp_initializer_patch20(self: Parser) -> Any:  # type: ignore[
 
 
 def _parser_parse_cpp_decl_or_func_patch20(self: Parser, start_token: Token) -> Any:  # type: ignore[no-redef]
-    typ = _sbg_norm_type21(_parser_read_template_type21(self))
+    _raw_typ21 = _parser_read_template_type21(self)
+    # BUGS_REPORT #9: remember `const`-ness (enforced by patch 26) instead of
+    # silently embedding it into the type string ("constint"), which used to
+    # make every downstream type check miss.
+    _is_const_decl21 = _raw_typ21.startswith("const")
+    if _is_const_decl21:
+        _raw_typ21 = _raw_typ21[len("const"):]
+    typ = _sbg_norm_type21(_raw_typ21)
     name = self.expect_ident()
 
     # Function definition or constructor-style variable declaration.
@@ -216,7 +223,7 @@ def _parser_parse_cpp_decl_or_func_patch20(self: Parser, start_token: Token) -> 
             return self.loc(node, start_token)
         if typ in _SBG_STRUCT_DEFS21:
             return self.loc(StructVarDecl(typ, name), start_token)
-        return self.loc(VarDecl(name, Literal(0), True), start_token)
+        return self.loc(VarDecl(name, Literal(0), not _is_const_decl21), start_token)
 
     # Plain declaration.
     init: Any = _sbg_default_for_type21(typ)
@@ -257,7 +264,7 @@ def _parser_parse_cpp_decl_or_func_patch20(self: Parser, start_token: Token) -> 
             setattr(node, "sbg_init", init)
         return self.loc(node, start_token)
 
-    node = VarDecl(name, init, True)
+    node = VarDecl(name, init, not _is_const_decl21)
     setattr(node, "sbg_type", typ)
     return self.loc(node, start_token)
 
