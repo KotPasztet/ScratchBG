@@ -162,6 +162,7 @@ def _compiler_compile_console_flag_loop_single_main_patch25(self: Compiler) -> N
     has_action_return = _sbg_action_entries_have_return(self.action_entries)
 
     hat = self.b.add_block("event_whenflagclicked", topLevel=True, x=536, y=455)
+    clear = self._compile_cin_buffer_clear()
     reset = _sbg_compile_delta_reset(self.b)
     call = self.b.add_block("procedures_call", inputs={}, mutation={
         "tagName": "mutation",
@@ -181,9 +182,13 @@ def _compiler_compile_console_flag_loop_single_main_patch25(self: Compiler) -> N
         self.b.set_parent(ret_log, if_ret)
         self.b.blocks[call]["next"] = if_ret
 
-    self.b.blocks[hat]["next"] = reset or call
+    head = clear
     if reset:
-        last = reset
+        head = self.b.chain(head, reset) if head else reset
+    self.b.blocks[hat]["next"] = head or call
+    if head:
+        self.b.blocks[head]["parent"] = hat
+        last = head
         while self.b.blocks[last].get("next"):
             last = self.b.blocks[last]["next"]
         self.b.blocks[last]["next"] = call

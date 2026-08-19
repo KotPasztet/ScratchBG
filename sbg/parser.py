@@ -601,7 +601,10 @@ class Parser:
         return left
 
     def parse_unary(self) -> Any:
-        if self.peek().value in ("!", "-"):
+        # NOTE: the kind check is required -- a *string literal* like "-"
+        # or "!" has the same .value as these operators, and treating it as
+        # unary broke expressions like `if (c == "-")`.
+        if self.peek().kind == "SYM" and self.peek().value in ("!", "-"):
             token = self.advance()
             op = token.value
             return self.loc(UnaryExpr(op, self.parse_unary()), token)
@@ -680,13 +683,13 @@ class Parser:
 
     def _parser_parse_cin_patch20(self, start_token: Token) -> Any:
         self.advance()  # cin
-        names: List[Any] = []
+        stmts: List[Any] = []
         while self.match(">>"):
             if self.peek().kind != "IDENT":
                 raise self.error("cin target must be an identifier")
-            names.append(Literal(self.advance().value))
+            stmts.append(AssignStmt(self.advance().value, "=", CallExpr("cin_get", [])))
         self.expect(";")
-        return self.loc(ExprStmt(CallExpr("cin", names)), start_token)
+        return self.loc(BlockStmt(stmts), start_token)
 
     def _parser_parse_cout_patch20(self, start_token: Token) -> Any:
         self.advance()  # cout
@@ -1361,12 +1364,19 @@ class ImportResolver:
         if path in self.stack:
             chain = " -> ".join(str(p) for p in [*self.stack, path])
             raise ImportSBGError(f"circular import detected: {chain}")
+        if path in self.seen:
+            # Dedup: diamond imports (A imports B and C, both import D) must
+            # splice D only once, otherwise duplicate proc/list declarations
+            # leak into the compiled program.
+            return Program([])
         self.stack.append(path)
         try:
             text = path.read_text(encoding="utf-8")
             self.source_cache[str(path)] = text
             program = Parser(Lexer(text, str(path)).tokens(), str(path)).parse()
-            return self.resolve_program(program, path)
+            resolved = self.resolve_program(program, path)
+            self.seen.add(path)
+            return resolved
         except OSError as e:
             raise ImportSBGError(str(e)) from e
         finally:

@@ -40,6 +40,10 @@ def _sbg_preprocess_cpp_surface(text: str) -> str:
     It is intentionally small; this is not a C++ preprocessor.
     """
     out: List[str] = []
+    # Strip a UTF-8 BOM if present: it is not whitespace, so without this the
+    # `^\s*#` include regex would miss line 1 and `#include <bits/stdc++.h>`
+    # would silently not become `import "bits";` (breaking the iostream gate).
+    text = text.lstrip("\ufeff")
     include_re = re.compile(r"^\s*#\s*include\s*([<\"])([^>\"]+)[>\"]\s*$")
     using_re = re.compile(r"^\s*using\s+namespace\s+std\s*;\s*$")
     for line in text.splitlines():

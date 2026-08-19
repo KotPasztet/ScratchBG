@@ -30,6 +30,10 @@ BACKDROP_SVG = '''<svg version="1.1" width="2" height="2" viewBox="-1 -1 2 2" xm
 TERMINAL_LIST_NAME = "Terminal"
 TERMINAL_LIST_ID = ",(0/{jAb*2vBd56rlG@1"
 ACTION_PROC_NAME = "Action"
+# std/io.sbg keeps leftover `cin >>` tokens in this list between reads
+# (C++ stdin semantics). Scratch never resets lists on flag click, so the
+# green-flag script must clear it to give every run a fresh input buffer.
+CIN_BUFFER_LIST_NAME = "cin_buffor"
 
 # Builtins that are emitted as real Scratch blocks. Procedure names may shadow
 # them only in statement position; expression-position returns are not available

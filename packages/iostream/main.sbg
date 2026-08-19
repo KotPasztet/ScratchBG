@@ -1,0 +1,7 @@
+// C++ iostream input surface.
+//
+// The parser (patch20) lowers stream-extraction statements into a sequence of
+// `x = cin_get();` assignments. `cin_get` and the buffered `getinput` algorithm
+// live in the std library (../std/io.sbg); this package only re-exports them so
+// that `import "iostream"` keeps working as the C++-style entrypoint.
+import "../std/io.sbg";

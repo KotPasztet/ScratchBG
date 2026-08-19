@@ -3,6 +3,7 @@
 //   import "std/sprite";
 //   import "std/pen";
 import "./runtime.sbg";
+import "./io.sbg";
 import "./console.sbg";
 import "./core.sbg";
 import "./math.sbg";

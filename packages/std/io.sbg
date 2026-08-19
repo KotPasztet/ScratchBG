@@ -1,0 +1,152 @@
+// Standard input helpers: getinput / getline / getinput_next.
+//
+// C++-style buffered input (mirrors the hand-made Scratch reference project):
+//   1. tokens are first taken from the `cin_buffor` leftover buffer,
+//   2. missing tokens are read with ask ">>" and space-tokenized,
+//   3. surplus tokens from an answer line are pushed to `cin_buffor`,
+//      exactly like unread stdin data surviving to the next cin extraction,
+//   4. the echoed prompt line (">> tok >> tok ...") is logged to Terminal.
+//
+// getinput_op   – list holding the tokens returned by the current getinput call
+// cin_buffor    – leftover tokens waiting for future reads (cleared at flag)
+// getinput_buff – echo string built from the tokens consumed this call
+// getinput_k    – how many tokens have been consumed for this call
+// getinput_tmp  – token currently being assembled, character by character
+// getinput_i    – 1-based character index into the current answer
+
+list getinput_op = [];
+list cin_buffor = [];
+let getinput_buff = "";
+let getinput_k = 0;
+let getinput_tmp = "";
+let getinput_i = 1;
+
+proc getinput(gl, n) {
+    clearList(getinput_op);
+    getinput_buff = "";
+    if (gl) {
+        ask(">>");
+        push(getinput_op, answer());
+        getinput_buff = answer();
+    } else {
+        getinput_k = 0;
+        // Drain the leftover buffer first (C++ stdin already holds this data).
+        repeat (n) {
+            if (len(cin_buffor) > 0) {
+                push(getinput_op, item(cin_buffor, 1));
+                getinput_buff = join(getinput_buff, join(" >> ", item(cin_buffor, 1)));
+                delete(cin_buffor, 1);
+                getinput_k += 1;
+            }
+        }
+        // Ask until n tokens have been collected; surplus tokens go to the buffer.
+        while (getinput_k < n) {
+            getinput_tmp = "";
+            getinput_i = 1;
+            ask(">>");
+            repeat (len(answer())) {
+                if (letter(answer(), getinput_i) == " ") {
+                    if (getinput_tmp != "") {
+                        if (getinput_k < n) {
+                            push(getinput_op, getinput_tmp);
+                            getinput_buff = join(getinput_buff, join(" >> ", getinput_tmp));
+                        } else {
+                            push(cin_buffor, getinput_tmp);
+                        }
+                        getinput_k += 1;
+                        getinput_tmp = "";
+                    }
+                } else {
+                    getinput_tmp = join(getinput_tmp, letter(answer(), getinput_i));
+                }
+                getinput_i += 1;
+            }
+            // Final token of the line (not followed by a space).
+            if (getinput_tmp != "") {
+                if (getinput_k < n) {
+                    push(getinput_op, getinput_tmp);
+                    getinput_buff = join(getinput_buff, join(" >> ", getinput_tmp));
+                } else {
+                    push(cin_buffor, getinput_tmp);
+                }
+                getinput_k += 1;
+                getinput_tmp = "";
+            }
+        }
+    }
+    log(getinput_buff);
+}
+
+// Whole-line read (C++ getline semantics): one ask, one line, no tokenizing.
+// If `cin >>` left unread tokens of the current line in cin_buffor, C++
+// getline returns the REST of that line, not a fresh one — drain the buffer
+// first (tokens re-joined with single spaces; exact whitespace is already
+// lost to tokenization).
+proc getline() {
+    if (len(cin_buffor) > 0) {
+        let rest = "";
+        getinput_buff = "";
+        while (len(cin_buffor) > 0) {
+            if (len(rest) > 0) {
+                rest = join(rest, " ");
+            }
+            rest = join(rest, item(cin_buffor, 1));
+            getinput_buff = join(getinput_buff, join(" >> ", item(cin_buffor, 1)));
+            delete(cin_buffor, 1);
+        }
+        log(getinput_buff);
+        return rest;
+    }
+    getinput(1, 1);
+    if (len(getinput_op) > 0) {
+        return item(getinput_op, 1);
+    }
+    return "";
+}
+
+// Next whitespace-separated token: one token from the buffer (or one ask
+// when the buffer is empty), like a single C++ stream extraction.
+proc getinput_next() {
+    getinput(0, 1);
+    if (len(getinput_op) > 0) {
+        return item(getinput_op, 1);
+    }
+    return "";
+}
+
+// C++ stream-extraction semantics: numeric-looking tokens become numbers,
+// everything else stays a string.
+// NOTE: no `else if` chains — the SBG parser expects `{` directly after `else`.
+proc __iostream_is_num(tok) {
+    if (len(tok) == 0) { return 0; }
+    let i = 1;
+    let dots = 0;
+    let ok = 1;
+    while (i <= len(tok)) {
+        let c = letter(tok, i);
+        if (c == ".") {
+            dots += 1;
+        } else {
+            if (c == "-") {
+                if (i != 1) { ok = 0; }
+            } else {
+                if (c < "0") { ok = 0; }
+                if (c > "9") { ok = 0; }
+            }
+        }
+        i += 1;
+    }
+    if (dots > 1) { return 0; }
+    return ok;
+}
+
+// One cin-extraction step (the parser lowers every stream extraction to a
+// `target = cin_get();` assignment). Consumes the buffered stdin model above.
+proc cin_get() {
+    let tok = getinput_next();
+    if (__iostream_is_num(tok)) {
+        return tok * 1;
+    }
+    return tok;
+}
+

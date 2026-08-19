@@ -7,6 +7,9 @@ import "../std/math.sbg";
 import "../std/strings.sbg";
 import "../std/text.sbg";
 import "../std/collections.sbg";
+// C++'s <bits/stdc++.h> includes <iostream>, so cin >> / getline() must work
+// from this package too (cin_get / getinput live in std/io.sbg).
+import "../std/io.sbg";
 import "./priority_queue.sbg";
 import "./deque.sbg";
 import "./dsu.sbg";

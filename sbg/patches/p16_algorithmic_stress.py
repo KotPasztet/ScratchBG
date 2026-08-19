@@ -95,7 +95,7 @@ def _sbg_wrap_flow_guard(self: ScratchBuilder, body_first: Optional[str], *, inc
     if cond is None:
         return body_first
     bid = self.add_block("control_if", inputs={})
-    self.blocks[bid]["inputs"]["CONDITION"] = self.expr_input(cond, bid)
+    self.blocks[bid]["inputs"]["CONDITION"] = self.condition_input(cond, bid)
     self.blocks[bid]["inputs"]["SUBSTACK"] = self.substack_input(body_first)
     self.set_parent(body_first, bid)
     return bid
@@ -232,7 +232,7 @@ def _compile_while_like_patch16(self: ScratchBuilder, cond_expr: Any, body: List
 
     stop = _sbg_loop_stop_expr(self, UnaryExpr("!", pure_cond), br)
     loop = self.add_block("control_repeat_until", inputs={})
-    self.blocks[loop]["inputs"]["CONDITION"] = self.expr_input(stop, loop)
+    self.blocks[loop]["inputs"]["CONDITION"] = self.condition_input(stop, loop)
     self.blocks[loop]["inputs"]["SUBSTACK"] = self.substack_input(sub)
     self.set_parent(sub, loop)
 
@@ -370,6 +370,11 @@ def _sbg_collect_calls_stmt(stmt: Any, out: set[str]) -> None:
         _sbg_collect_calls_expr(stmt.expr, out)
     elif isinstance(stmt, ReturnStmt) and stmt.expr is not None:
         _sbg_collect_calls_expr(stmt.expr, out)
+    elif isinstance(stmt, BlockStmt):
+        # Emitted by patch20 lowering (`cin >> x` → BlockStmt of assigns) and
+        # by comma-separated declarators (`int a, b;`); recurse or tree-shaking
+        # wrongly drops procs that are only called inside such blocks.
+        for s in stmt.body: _sbg_collect_calls_stmt(s, out)
     elif isinstance(stmt, IfStmt):
         _sbg_collect_calls_expr(stmt.cond, out)
         for s in stmt.then_body: _sbg_collect_calls_stmt(s, out)

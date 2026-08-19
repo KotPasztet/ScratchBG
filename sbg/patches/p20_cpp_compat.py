@@ -16,9 +16,44 @@ KEYWORDS.update({"struct", "void", "static"})
 _CPP_TYPE_KWS.update({"void"})
 
 
+# Stream syntax (`cin >> x`, `cout << x`) is gated on the iostream/bits/std
+# library being imported, exactly like `std::` names are gated on `import
+# "std"`: without it the parser would lower `cin >> x` to a call of an
+# unknown proc cin_get().  C++ discipline: using a stream without
+# #include <iostream> is a compile error, not a silent auto-import.
+_STREAM_USE_RE = re.compile(r"\b(cin)\b\s*>>|\b(cout)\b\s*<<")
+_IOSTREAM_IMPORT_RE = re.compile(r'import\s+"(?:iostream|bits|std)(?:\.sbg)?"')
+
+
+def _sbg_cpp_check_stream_import(text: str, filename: str) -> None:
+    """Raise CompileError when stream syntax is used with no iostream import.
+
+    `text` must already be include-preprocessed (so `#include <iostream>`
+    shows up as `import "iostream";` and `#include <bits/stdc++.h>` as
+    `import "bits";`).  Line comments are ignored so that docs mentioning
+    `cin >>` do not trip the check; block comments and string literals are
+    not analyzed (documented limitation).
+    """
+    if _IOSTREAM_IMPORT_RE.search(text):
+        return
+    for lineno, line in enumerate(text.splitlines(), 1):
+        code = line.split("//", 1)[0]
+        m = _STREAM_USE_RE.search(code)
+        if m:
+            which = m.group(1) or m.group(2)
+            raise CompileError(
+                f"{filename}:{lineno}:{m.start() + 1}: `{which}` used without "
+                "`#include <iostream>` (or `<bits/stdc++.h>`): add "
+                '`#include <iostream>` / `import "iostream";` at the top of the file'
+            )
+
+
 def _sbg_cpp_preprocess_patch20(text: str) -> str:
     # Keep the patch18 include preprocessor, then normalize std:: names.  This is
     # deliberately not a C++ preprocessor; it is a surface-syntax adapter.
+    # NOTE: stream syntax is NOT auto-imported anymore; using `cin >>` /
+    # `cout <<` without importing iostream/bits/std is a CompileError (see
+    # _sbg_cpp_check_stream_import, wired in _lexer_init_patch20 below).
     text = _sbg_preprocess_cpp_surface(text)
     text = text.replace("std::", "")
     return text
@@ -69,7 +104,9 @@ def _sbg_extract_comments_patch20(text: str) -> List[Dict[str, Any]]:
 # Patch the Lexer init again.  Patch18 already preprocesses, so call the original
 # raw initializer instead of nesting the include processor twice.
 def _lexer_init_patch20(self: Lexer, text: str, filename: str = "<source>"):
-    return _old_lexer_init_patch18(self, _sbg_cpp_preprocess_patch20(text), filename)
+    processed = _sbg_cpp_preprocess_patch20(text)
+    _sbg_cpp_check_stream_import(processed, filename)
+    return _old_lexer_init_patch18(self, processed, filename)
 
 Lexer.__init__ = _lexer_init_patch20  # type: ignore[method-assign]
 
@@ -257,14 +294,17 @@ def _parser_parse_cout_patch20(self: Parser, start_token: Token) -> Any:
 
 
 def _parser_parse_cin_patch20(self: Parser, start_token: Token) -> Any:
+    # `cin >> a >> b;` lowers to `a = cin_get(); b = cin_get();` — a BlockStmt
+    # of plain assignments, so everything downstream (runtime, Scratch builder,
+    # IR, mangler) sees only ordinary proc calls from the iostream package.
     self.advance()  # cin
-    names: List[Any] = []
+    stmts: List[Any] = []
     while self.match(">>"):
         if self.peek().kind != "IDENT":
             raise self.error("cin target must be an identifier")
-        names.append(Literal(self.advance().value))
+        stmts.append(AssignStmt(self.advance().value, "=", CallExpr("cin_get", [])))
     self.expect(";")
-    return self.loc(ExprStmt(CallExpr("cin", names)), start_token)
+    return self.loc(BlockStmt(stmts), start_token)
 
 
 _old_parse_top_or_stmt_patch20 = Parser.parse_top_or_stmt
@@ -519,17 +559,8 @@ def _runtime_call_patch20(self: Runtime, name: str, args: List[Any]) -> Any:
         return None
     if name == "println":
         return self.call("log", ["".join(_sbg_format_number(a) for a in args)])
-    if name == "cin":
-        # Native runner asks from stdin. Scratch compiler emits ask-and-wait.
-        for target in args:
-            val = input(">> ")
-            try:
-                val = float(val)
-                if val.is_integer(): val = int(val)
-            except Exception:
-                pass
-            self.vars[str(target)] = val
-        return None
+    # `cin` is no longer native: patch20 lowers `cin >> x` to
+    # `x = cin_get()` from packages/iostream (stdlib getinput algorithm).
     if name == "at0":
         return _sbg_vec_at0_runtime_patch20(args[0], int(float(args[1])))
     if name == "vec_size":
@@ -647,18 +678,8 @@ def _builder_compile_call_stmt_patch20(self: ScratchBuilder, expr: CallExpr) -> 
     if name in {"cout", "print", "println"}:
         val = Literal("") if not a else a[0] if len(a) == 1 else self.join_many(a)
         return self.compile_call_stmt(CallExpr("log", [val]))
-    if name == "cin":
-        first: Optional[str] = None
-        for target in a:
-            if not isinstance(target, Literal):
-                raise CompileError("cin target metadata must be literal")
-            varname = str(target.value)
-            ask = self.add_block("sensing_askandwait", inputs={"QUESTION": self.literal_input(">>")})
-            setb = self.add_block("data_setvariableto", fields={"VARIABLE": [varname, self.var_id(varname)]}, inputs={})
-            ans = self.add_block("sensing_answer", parent=setb)
-            self.blocks[setb]["inputs"]["VALUE"] = [1, ans]
-            first = self.chain(first, self.chain(ask, setb))
-        return first
+    # `cin` is no longer a native builder construct: patch20 lowers
+    # `cin >> x` to `x = cin_get()` (packages/iostream on top of std getinput).
     return _old_builder_compile_call_stmt_patch20(self, expr)
 
 ScratchBuilder.compile_call_stmt = _builder_compile_call_stmt_patch20  # type: ignore[method-assign]

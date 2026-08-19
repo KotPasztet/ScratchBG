@@ -92,7 +92,7 @@ def _sbg_set_var_block(self: ScratchBuilder, name: str, expr: Any) -> str:
 
 def _sbg_if_block(self: ScratchBuilder, cond: Any, body_first: Optional[str]) -> str:
     bid = self.add_block("control_if", inputs={})
-    self.blocks[bid]["inputs"]["CONDITION"] = self.expr_input(cond, bid)
+    self.blocks[bid]["inputs"]["CONDITION"] = self.condition_input(cond, bid)
     self.blocks[bid]["inputs"]["SUBSTACK"] = self.substack_input(body_first)
     self.set_parent(body_first, bid)
     return bid

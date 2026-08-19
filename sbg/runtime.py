@@ -1027,17 +1027,8 @@ class Runtime:
             return None
         if name == "println":
             return self.call("log", ["".join(_sbg_format_number(a) for a in args)])
-        if name == "cin":
-            # Native runner asks from stdin. Scratch compiler emits ask-and-wait.
-            for target in args:
-                val = input(">> ")
-                try:
-                    val = float(val)
-                    if val.is_integer(): val = int(val)
-                except Exception:
-                    pass
-                self.vars[str(target)] = val
-            return None
+        # `cin` is no longer native: patch20 lowers `cin >> x` to
+        # `x = cin_get()` from packages/iostream (stdlib getinput algorithm).
         if name == "at0":
             return _sbg_vec_at0_runtime_patch20(args[0], int(float(args[1])))
         if name == "vec_size":

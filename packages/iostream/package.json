@@ -1,0 +1,6 @@
+{
+  "name": "iostream",
+  "version": "0.9.0-patch25",
+  "main": "main.sbg",
+  "description": "C++ iostream-style input (cin >>) built on the std getinput algorithm"
+}

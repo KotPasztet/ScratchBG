@@ -15,7 +15,7 @@ from .ast import (
     Literal, VarExpr, BinaryExpr, UnaryExpr, CallExpr, ArrayExpr,
 )
 from .scratch import ScratchBuilder
-from .globals import ACTION_PROC_NAME, BACKDROP_SVG, TERMINAL_LIST_ID, TERMINAL_LIST_NAME
+from .globals import ACTION_PROC_NAME, BACKDROP_SVG, CIN_BUFFER_LIST_NAME, TERMINAL_LIST_ID, TERMINAL_LIST_NAME
 
 class Compiler:
     def __init__(self, program: Program, *, allow_library: bool = False):
@@ -340,9 +340,25 @@ class Compiler:
             },
         }
 
+    def _compile_cin_buffer_clear(self) -> Optional[str]:
+        """Clear the std/io.sbg leftover token buffer at green flag.
+
+        Scratch does not reset lists between runs, so without this the tokens
+        left over from a previous run's `cin >>` (the C++ stdin buffer) would
+        be consumed by the next run. Emitted only when the program actually
+        declares the buffer (i.e. uses std input).
+        """
+        if CIN_BUFFER_LIST_NAME not in self.b.lists:
+            return None
+        return self.b.add_block(
+            "data_deletealloflist",
+            fields={"LIST": [CIN_BUFFER_LIST_NAME, self.b.list_id(CIN_BUFFER_LIST_NAME)]},
+        )
+
     def compile_console_flag_loop(self) -> None:
         assert self.action_argid is not None
         hat = self.b.add_block("event_whenflagclicked", topLevel=True, x=536, y=455)
+        clear = self._compile_cin_buffer_clear()
         forever = self.b.add_block("control_forever", parent=hat, inputs={})
         ask = self.b.add_block("sensing_askandwait", parent=forever, inputs={
             "QUESTION": [1, [10, ""]]
@@ -355,7 +371,11 @@ class Compiler:
             "warp": "true",
         })
         answer = self.b.add_block("sensing_answer", parent=call)
-        self.b.blocks[hat]["next"] = forever
+        self.b.blocks[hat]["next"] = clear or forever
+        if clear:
+            self.b.blocks[clear]["parent"] = hat
+            self.b.blocks[clear]["next"] = forever
+            self.b.blocks[forever]["parent"] = clear
         self.b.blocks[forever]["inputs"]["SUBSTACK"] = [2, ask]
         self.b.blocks[ask]["next"] = call
         self.b.blocks[call]["inputs"][self.action_argid] = [3, answer, [10, ""]]

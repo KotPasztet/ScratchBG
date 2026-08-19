@@ -113,7 +113,7 @@ def _compile_call_stmt_patch15(self: ScratchBuilder, expr: CallExpr) -> Optional
     if name == "waitUntil":
         self.need_args(name, a, 1)
         bid = self.add_block("control_wait_until", inputs={})
-        self.blocks[bid]["inputs"]["CONDITION"] = self.expr_input(a[0], bid)
+        self.blocks[bid]["inputs"]["CONDITION"] = self.condition_input(a[0], bid)
         return bid
 
     if name in ("popTo", "shiftTo"):
@@ -286,17 +286,7 @@ def _sbg_mangle_locals(program: Program) -> Program:
         elif isinstance(e, UnaryExpr):
             e.expr = expr(e.expr, env_stack)
         elif isinstance(e, CallExpr):
-            if e.callee == "cin":
-                # cin's targets are encoded as Literal(varname) rather than
-                # VarExpr(varname), so they need explicit lookup/rename here;
-                # otherwise cin keeps writing to the pre-mangling variable name
-                # while every read of that local uses the mangled __loc_N_name.
-                e.args = [
-                    Literal(lookup(env_stack, a.value)) if isinstance(a, Literal) else expr(a, env_stack)
-                    for a in e.args
-                ]
-            else:
-                e.args = [expr(a, env_stack) for a in e.args]
+            e.args = [expr(a, env_stack) for a in e.args]
         elif isinstance(e, ArrayExpr):
             e.items = [expr(x, env_stack) for x in e.items]
         return e
@@ -330,6 +320,11 @@ def _sbg_mangle_locals(program: Program) -> Program:
             return st
         if isinstance(st, ExprStmt):
             st.expr = expr(st.expr, env_stack); return st
+        if isinstance(st, BlockStmt):
+            # Emitted by patch20 lowering (`cin >> a` → BlockStmt of assigns)
+            # and by comma-separated declarators (`int a, b;`).
+            st.body = body(st.body, env_stack)
+            return st
         if isinstance(st, ReturnStmt):
             if st.expr is not None: st.expr = expr(st.expr, env_stack)
             return st

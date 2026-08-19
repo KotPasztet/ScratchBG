@@ -98,14 +98,37 @@ class ScratchBuilder:
         bid = self.compile_expr(expr, parent=parent)
         return [2, bid] if self.is_boolean_expr(expr) else [1, bid]
 
+    def condition_input(self, expr: Any, parent: Optional[str] = None) -> Any:
+        """Input for a boolean (hexagonal) slot such as CONDITION or OPERAND.
+
+        Scratch rejects round reporter blocks dropped into hexagonal fields, so
+        a non-boolean expression is wrapped as `expr == 1`. This handles both
+        numbers and booleans (1 == 1 is true, 0 == 1 is false) and mirrors the
+        C-style truthiness the language promises. Boolean expressions are used
+        as-is: sharp blocks are always accepted in round slots, never the
+        other way around.
+        """
+        if self.is_boolean_expr(expr):
+            return self.expr_input(expr, parent)
+        return self.expr_input(BinaryExpr(expr, "==", Literal(1)), parent)
+
     def substack_input(self, first: Optional[str]) -> Any:
         return [2, first] if first else [1, None]
+
+    # Builtins that compile to boolean (hexagonal) reporter blocks. They must
+    # never be wrapped in `== 1` by condition_input(): in Scratch a boolean in
+    # a round slot renders as the text "true"/"false", so `true == 1` is false.
+    BOOLEAN_REPORTER_BUILTINS = {
+        "contains", "listHas",
+        "mouseDown", "keyPressed", "touching",
+    }
 
     def is_boolean_expr(self, expr: Any) -> bool:
         if isinstance(expr, Literal) and isinstance(expr.value, bool): return True
         if isinstance(expr, UnaryExpr) and expr.op == "!": return True
         if isinstance(expr, BinaryExpr) and expr.op in ("==", "!=", "<", "<=", ">", ">=", "&&", "||"): return True
         if isinstance(expr, CallExpr) and expr.callee == "contains": return True
+        if isinstance(expr, CallExpr) and expr.callee in self.BOOLEAN_REPORTER_BUILTINS: return True
         return False
 
     def compile_expr(self, expr: Any, parent: Optional[str] = None) -> str:
@@ -141,7 +164,7 @@ class ScratchBuilder:
         if isinstance(expr, UnaryExpr):
             if expr.op == "!":
                 bid = self.add_block("operator_not", parent=parent, inputs={})
-                self.blocks[bid]["inputs"]["OPERAND"] = self.expr_input(expr.expr, bid)
+                self.blocks[bid]["inputs"]["OPERAND"] = self.condition_input(expr.expr, bid)
                 return bid
             if expr.op == "-":
                 return self.compile_expr(BinaryExpr(Literal(0), "-", expr.expr), parent)
@@ -160,8 +183,8 @@ class ScratchBuilder:
             opcode = opmap[expr.op]
             bid = self.add_block(opcode, parent=parent, inputs={})
             if expr.op in ("&&", "||"):
-                self.blocks[bid]["inputs"]["OPERAND1"] = self.expr_input(expr.left, bid)
-                self.blocks[bid]["inputs"]["OPERAND2"] = self.expr_input(expr.right, bid)
+                self.blocks[bid]["inputs"]["OPERAND1"] = self.condition_input(expr.left, bid)
+                self.blocks[bid]["inputs"]["OPERAND2"] = self.condition_input(expr.right, bid)
             elif expr.op in ("<", ">", "=="):
                 self.blocks[bid]["inputs"]["OPERAND1"] = self.expr_input(expr.left, bid)
                 self.blocks[bid]["inputs"]["OPERAND2"] = self.expr_input(expr.right, bid)
@@ -310,14 +333,14 @@ class ScratchBuilder:
                 then_first = self.compile_statement_chain(stmt.then_body)
                 else_first = self.compile_statement_chain(stmt.else_body)
                 bid = self.add_block("control_if_else", inputs={})
-                self.blocks[bid]["inputs"]["CONDITION"] = self.expr_input(stmt.cond, bid)
+                self.blocks[bid]["inputs"]["CONDITION"] = self.condition_input(stmt.cond, bid)
                 self.blocks[bid]["inputs"]["SUBSTACK"] = self.substack_input(then_first)
                 self.blocks[bid]["inputs"]["SUBSTACK2"] = self.substack_input(else_first)
                 self.set_parent(then_first, bid); self.set_parent(else_first, bid)
                 return bid
             then_first = self.compile_statement_chain(stmt.then_body)
             bid = self.add_block("control_if", inputs={})
-            self.blocks[bid]["inputs"]["CONDITION"] = self.expr_input(stmt.cond, bid)
+            self.blocks[bid]["inputs"]["CONDITION"] = self.condition_input(stmt.cond, bid)
             self.blocks[bid]["inputs"]["SUBSTACK"] = self.substack_input(then_first)
             self.set_parent(then_first, bid)
             return bid

@@ -523,6 +523,32 @@ Dwa niezależne, wdrażalne bez rewolucji w kompilatorze usprawnienia:
    doskwiera przy pisaniu czegokolwiek tekstowego w SBG.
 
 ---
+## 12. POWAŻNE [BUG] Nadpisywanie ramek stosu / zmiennych lokalnych w funkcjach rekurencyjnych i wielokrotnego dostępu
+
+**Priorytet:** Wysoki  
+**Komponent:** `sbg/compiler.py` (Name Mangling i alokacja zmiennych)
+
+### Opis błędu
+Kompilator spłaszcza wszystkie zmienne lokalne do statycznych, zniekształconych zmiennych globalnych w Scratchu (np. `__loc_114_a`). Zapewnia to maksymalną prędkość wykonania dla kodu liniowego, ale niszczy izolację pamięci podczas wywołań rekurencyjnych oraz wielokrotnego dostępu do funkcji (reentrancy).
+
+### Przyczyna
+Z powodu braku lokalnego zasięgu (scope) w Scratchu, spłaszczanie zmiennych lokalnych do stałych nazw globalnych przydziela im jedno statyczne miejsce w pamięci. Gdy funkcja wywołuje samą siebie rekurencyjnie (lub wywołuje inną procedurę używającą tych samych spłaszczonych zmiennych globalnych), wewnętrzne wywołanie nadpisuje dane z ramki stosu funkcji wywołującej, nie przywracając ich po powrocie.
+
+### Krok po kroku (Jak powtórzyć)
+1. Skompiluj i uruchom funkcję rekurencyjną (np. rekurencyjny Fibonacci, DFS na grafie lub QuickSort).
+2. Zaobserwuj uszkodzenie stanu zmiennych, błędne wartości zwracane lub nieskończone pętle spowodowane zamazaniem zmiennych lokalnych i liczników pętli.
+
+### Wpływ
+- Standardowe algorytmy rekurencyjne zwracają błędne wyniki lub zawieszają program.
+- Ograniczenie zgodności z C++ dla grafów wywołań zawierających cykle.
+
+### Proponowane rozwiązanie / Strategia naprawy
+Wdrożenie hybrydowego modelu pamięci poprzez dodatkowy przepust (pass) w kompilatorze:
+1. **Analiza grafu wywołań (Call Graph Analysis):** Analiza AST pod kątem podziału funkcji na *płaskie/czyste* (brak rekurencji) oraz *rekurencyjne/wielokrotnego dostępu*.
+2. **Ścieżka statyczna (Domyślna):** Zachowanie szybkich zmiennych globalnych (`__loc_...`) dla funkcji płaskich.
+3. **Ścieżka stosowa (Dla rekurencji):** Dla funkcji rekurencyjnych generowanie w Scratchu sekwencji `push`/`pop` na liście-stosie (`__call_stack`) w celu zachowania stanu zmiennych lokalnych między wywołaniami.
+
+
 
 ## 💡 12. SUGESTIA FUNKCJONALNA: dwukierunkowy "bitowy most" plik ↔ Scratch (transfer danych binarnych przez copy-paste)
 

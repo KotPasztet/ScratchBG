@@ -33,10 +33,13 @@ proc testSummary() {
     return test_failed == 0;
 }
 
-proc assertTrue(cond, message) {
+proc assertTrue(cond, msg) {
     // SUGESTIA: pkt 10 - assert helper for easy testing
+    // NOTE: the parameter must not be called `message` -- that word is a
+    // reserved keyword in the SBG grammar (on message ...), so it cannot be
+    // used as an identifier/parameter name.
     if (!cond) {
-        log(join("ASSERT FAILED: ", message));
+        log(join("ASSERT FAILED: ", msg));
         return 0;
     }
     return 1;

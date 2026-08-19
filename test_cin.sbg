@@ -1,0 +1,12 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    int a;
+    int b;
+    string s;
+    cin >> a >> b;
+    cin >> s;
+    string line = getline();
+    return join("a=", join(a, join(" b=", join(b, join(" s=", join(s, join(" line=", line)))))));
+}

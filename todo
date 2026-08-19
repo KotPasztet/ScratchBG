@@ -1,0 +1,126 @@
+PAMIĘTAJMY, ŻE SBG TO DOSŁOWNIE KOMPILATOR OKROJONEGO C++ DO KODU SCRATCHA
+
+SORTOWANIE: OD NAJPROSTSZEJ IMPLEMENTACJI DO NAJTRUDNIEJSZEJ (z zależnościami).
+Numer [N] = zalecana kolejność implementacji. Pozycje wyżej odblokowują/delimitują niższe.
+
+=== FAZA 1 — szybkie wygrane (małe, lokalne, bez zależności) ===
+
+[1] upewnienie się że if, else, else if działa dokładnie tak jak w c++
+    - OBECNIE: `else if (...) {` to BŁĄD SKŁADNI (parser oczekuje `{` po `else`; patrz CLINE.md).
+    - Fix: parser — po `else` dopuść `if` (pętla/else-if-chain, jak w C++).
+    - Najprostsze i pierwsze: bez tego żadne idiomatyczne C++ (a więc i [13]) się nie skompiluje.
+
+[2] drobne buggi z BUGS_REPORT (krótkie, niezależne fixy; odznaczyć w BUGS_REPORT po załataniu):
+    - #5  niespójne formatowanie liczb (5 vs 610.0) — formatowanie wyjścia,
+    - #8  `--embed` rozwiązuje ścieżkę względem katalogu pliku .sbg, nie CWD,
+    - #6  `vector<string> x = splitByChar(...)` kompiluje się mimo błędnego typu — prosty check zgodności typu przy deklaracji.
+
+[3] BUGS_REPORT #2: `len()` w natywnym `sbg run` zgaduje, że string to zserializowany wektor
+    — psuje długość dla wielu znaków. Fix heurystyki w sbg/runtime.py.
+
+=== FAZA 2 — buggi średniej wagi z BUGS_REPORT ===
+
+[4] BUGS_REPORT #1 + #7 (połączone): kopie struktur (`Item b = a;` cicho gubi pola)
+    + auto-lowering `vector<Struct>.at(idx).field` zamiast ręcznego obejścia.
+    - Dotyka loweringów struktur (p21*), średnio-trudne. Warunek wstępny: nic, ale robić po [1] (testy).
+
+[5] BUGS_REPORT #9: `const` jest parsowane, ale nigdy nie wymuszane.
+    - Wymaga mini-infrastruktury sprawdzeń (przypisanie do const → CompileError), ale lokalnej.
+
+=== FAZA 3 — składnia średniozaawansowana ===
+
+[6] implementacja pętli typu: for(int k : fffff){}
+    - Lowering do pętli indeksowej po `len(kontener)` (wektor / string).
+    - Średnie; najlepiej po [4] (poprawne semantycznie listy/structy ułatwiają testy).
+
+=== FAZA 4 — reorganizacja bibliotek (KOLEJNOŚĆ KLUCZOWA) ===
+
+[7] Zrobienie, żeby był scratchlib (scratch::) i tam przeniesione jakieś rzeczy typu move, pen,
+    etc. — wszystkie scratchowe API.
+    - MUSI być przed [8]: czyszczenie stdlib polega na wyniesieniu scratch-specyficznych rzeczy.
+
+[8] Zrobienie, żeby w stdlibie były tylko rzeczy które są w prawdziwym stdlib w C++,
+    i żeby działały identycznie jak w C++.
+    - Zależy od [7].
+
+[9] Naprawienie tego, że funkcje z stdliba nie wymagają przedrostka std:: lub namespace std
+    (w C++ wymagane jest `std::` albo `using namespace std;`).
+    - Zależy od [8].
+
+=== FAZA 5 — duże systemy (mogą iść równolegle względem siebie) ===
+
+[10] ENFORCEMENT TYPÓW ZMIENNYCH. TZN SYPANIE BŁĘDÓW KOMPILACJI w przypadku gdy np. chcesz
+     castować stringa do inta (xd), string vector charów, etc. żeby to działało identycznie jak w C++.
+     - WAŻNE (ograniczenie Scratcha): Scratch NIE wymusza typów — number|string|bool, number = float64.
+       Deklaracja `int` niczego runtimeowo nie gwarantuje! Znane case'y (szczegóły w CLINE.md, sekcja
+       "Typy w Scratch"): `/` zawsze float; int→float przez arytmetykę (2.0 wygląda jak 2); brak 32-bit
+       wraparoundu (float64, precyzja do 2^53); cin/answer zwraca string, a koercja nieliczbowego
+       stringa w arytmetyce daje 0 (cicho!); mod ≠ C++ %; porównania koercją liczbową/tekstową.
+     - DRABINA PODEJŚĆ (od NAJPROSTSZEJ do NAJTRUDNIEJSZEJ implementacji; wdrażać inkrementalnie):
+       a) NAJPROSTSZE: lowering trunc przy przypisaniu do zmiennej int i przy `return` z funkcji int —
+          dokładnie propozycja z BUGS_REPORT #4 (wrap w floor/trunc). UWAGA: C++ obcina w stronę ZERA
+          (trunc), floor tnie w dół — dla ujemnych różny wynik (-7/2: C++ -3, floor -4); trunc =
+          floor dla >=0, ceiling dla <0. To załatwia główny case: "zrobił się float w incie" z `/`, sqrt.
+       b) type-aware lowering operatorów: `int / int` → dzielenie CAŁKOWITE (semantyka C++, nie float);
+          `%` dla ujemnych zgodnie z C++ (Scratch `mod` kłamie).
+       c) walidacja int-owości tokenów z cin w stdlib (io.sbg): token nie-sparsowany jako int →
+          zdefiniowany błąd, a nie ciche 0 (koercja "abc" w arytmetyce daje 0!).
+       d) compile-time type-checker przepływów między typami: string→int bez castu = CompileError,
+          zły typ inicjalizatora/argumentu (zamyka BUGS_REPORT #4 i #6).
+       e) NAJTRUDNIEJSZE / W PEŁNI NIEOSIĄGALNE: zachowanie typów w runtime.
+          - Pomysł "trzymaj inty jako stringów z \"\"" NIE DZIAŁA: Scratch porównuje "5" == 5
+            numerycznie (PRAWDA!) i koercuje stringi w arytmetyce; vanilla Scratch NIE MA bloku
+            `typeof`, więc string "5" i liczba 5 są runtimeowo NIEODRÓŻNIALNE — boxing niczego
+            nie chroni, a psułby każdy lowering arytmetyczny.
+          - Runtime guard `x != floor(x)` wykrywa tylko FLOATY; stringa "5" nie wykryje
+            (bo "5" == 5 numerycznie i floor("5") koercuje do 5).
+          - Wniosek: stringi trzeba ZATRZYMAĆ na etapie compile-time (pkt d); w runtime da się
+            pilnować wyłącznie int-owości (floor-check), nigdy typu bazowego. To świadome
+            ograniczenie — udokumentować, nie walczyć z platformą.
+     - Duży, samodzielny system type-checkingu (spójny z BUGS_REPORT #4: int/float bez wymuszonej semantyki).
+     - FUNDAMENT pod [13] (vector<vector<int>>, pair, priorytetowe kolejki wymagają typów).
+
+[11] BUGS_REPORT "#12 POWAŻNE [BUG]" (reentrancy): nadpisywanie ramek stosu / zmiennych lokalnych
+     w funkcjach rekurencyjnych i wielokrotnego dostępu.
+     - Przyczyna: p15 mangluje lokalne do STATYCZNYCH globalnych `__loc_N_name` = jedno miejsce
+       w pamięci; rekurencja/współwywołania zamazują ramkę wywołującego (liczniki pętli, lokalki).
+     - Fix wg raportu: analiza grafu wywołań → funkcje PŁASKIE zostają na szybkich statycznych
+       zmiennych, funkcje REKURENCYJNE dostają ramkę na liście-stosie (`__call_stack`, push/pop).
+     - DUŻE i KRYTYCZNE dla [13]: QuickSort, DFS, Segment Tree, Tarjan, Graham są rekurencyjne —
+       bez tego [13] zwraca śmieci albo wisi. Mocno powiązane z p15 (mangler) — patrz CLINE.md.
+
+[12] Optymalizacja O3, żeby serio zamieniała pętlę dodającą +1 milion razy i wypisującą na po prostu
+     wypisywanie miliona, oraz ŻEBY PĘTLE ZE STAŁYMI DANYMI BYŁY LICZONE NA ETAPIE KOMPILACJI
+     i dawały po prostu policzony wynik do Scratcha (partial evaluation / constant folding pętli).
+     - Duże, ale niezależne od [10] i [11] — można robić równolegle z nimi.
+
+=== FAZA 6 — test akceptacyjny całości (NAJTRUDNIEJSZE, zależy od WSZYSTKIEGO powyżej) ===
+
+[13] Rozbudowanie tego sbg i STDLIB (stdlib składa się też z .sbg), żeby się kompilowały standardowo
+     napisane algorytmy z C++, w sbg. ALGORYTMY które MUSZĄ SIĘ KOMPILOWAĆ, NAPISANE W C++ w pliku sbg,
+     BEZ ŻADNYCH OBEJŚĆ scratch specific, tylko normalnie napisane w .sbg:
+       - QuickSort (rekurencja, wskaźniki/referencje, przesuwanie wartości w pamięci)
+       - Algorytm Dijkstry (std::priority_queue, dynamiczne wektory, std::pair)
+       - DFS (rekurencja, listy sąsiedztwa vector<vector<int>>, tablica odwiedzonych)
+       - Drzewo Przedziałowe / Segment Tree (struktury/klasy, operacje bitowe x << 1, silna rekurencja)
+       - KMP (zaawansowane operacje na stringach, indeksowanie, tablica LPS)
+       - Tarjan SCC (std::stack, rekurencja, referencje, modyfikacja zmiennych globalnych/lokalnych)
+       - BFS na siatce 2D (std::queue, struktury Point, tablice wielowymiarowe)
+       - Mapowanie częstotliwości słów ze std::map / std::unordered_map (struktury asocjacyjne)
+       - Otoczka wypukła — Graham (sortowanie z własnym komparatorem/lambdą, iloczyn wektorowy, std::vector)
+       - Algorytm Fleury'ego — cykl Eulera (std::list::erase, usuwanie krawędzi ze środka struktury)
+     - To jest KRYTERIUM AKCEPTACJI projektu: zależy od [1] (else if), [6] (for-each), [7][8][9] (biblioteki),
+       [10] (typy), [11] (działająca rekurencja — bez niej QuickSort/DFS/Tarjan/Segment Tree zwracają śmieci). Bez tych składowych algorytmy się nie skompilują "normalnie".
+
+=== POZA ZAKRESEM aktualnego TODO (sugestie/feature z BUGS_REPORT, nie buggi) ===
+UWAGA: BUGS_REPORT ma DWIE sekcje numerowane "12" (defekt numeracji pliku):
+- "#12. POWAŻNE [BUG]" — reentrancy/rekurencja → PRAWDZIWY bug, jest w roadmapie jako [11] (Faza 5).
+- "#12. SUGESTIA FUNKCJONALNA" — bitowy most plik ↔ Scratch (file2bits/bits2file, tylko CLI + stdlib,
+  zero zmian w rdzeniu kompilatora) → NIE jest bugiem, poza zakresem todo. Z [10] łączy się tylko
+  pozornie: most świadomie używa stringów jako nośnika (alfabet 0/1 omija heurystykę len() z #2),
+  więc enforcement typów [10] nie koliduje — dane mostu z założenia pozostają stringami.
+Pozostałe poza zakresem ("nie suggestie, buggi"): #3 (mechanizm obsługi błędów),
+#10 (assert/framework testowy), #11 (interpolacja stringów).
+
+ZASADA: ZAŁATANIE WSZYSTKIEGO Z BUG REPORT MD I BEZPOŚREDNIE ODZNACZANIE W TAMTYM PLIKU
+(nie suggestie, buggi — czyli #1, #2, #4, #5, #6, #7, #8, #9, #12-BUG).

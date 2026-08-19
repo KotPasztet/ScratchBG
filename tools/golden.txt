@@ -7,16 +7,16 @@ cpp_surface_demo :: sum=15 p=3 has4=1 pq=ABC
 dot_methods_demo :: n=4 p=3 pq=ABC
 files_demo :: FILES DEMO count=0
 files_kv_demo :: level=1 keys=0
-foreach_range_demo :: sum=15 squares=55.0 sorted=1 2 3 4 5
+foreach_range_demo :: sum=15 squares=55 sorted=1 2 3 4 5
 keyboard_demo :: no key
 main :: nie znam komendy: go
-motion_demo :: Dot x=10.0 y=4.0 motion tick sent
+motion_demo :: Dot x=10 y=4 motion tick sent
 oi_port_sanity :: OK cpp-like algorithmic surface
 pen_demo :: Pen demo: drawing is done by invisible sprite Painter. ok
 pro_std_demo :: professional std demo [PASS] parseInt
-return :: combo = 85.0
+return :: combo = 85
 sprites :: stage: start WorkerA count = 101
 std_demo :: STD DEMO unknown: go
 std_migrated_demo :: 42 7
 terminal_visibility_demo :: echo: go
-turbo_dt_demo :: frame=1.0
+turbo_dt_demo :: frame=1
