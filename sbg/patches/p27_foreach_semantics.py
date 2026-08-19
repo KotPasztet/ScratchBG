@@ -33,7 +33,7 @@ def _sbg_foreach_is_string_source_patch27(source: Any) -> bool:
     return isinstance(source, VarExpr) and _SBG_VAR_TYPES21.get(source.name) == "string"
 
 
-def _sbg_make_for_each(start_token: Token, value_name: str, source: Any, body: List[Any], *, declare_value: bool = True, index_name: Optional[str] = None) -> ForStmt:  # type: ignore[no-redef]
+def _sbg_make_for_each(start_token: Token, value_name: str, source: Any, body: List[Any], *, declare_value: bool = True, index_name: Optional[str] = None, const_value: bool = False) -> ForStmt:  # type: ignore[no-redef]
     if index_name is None and _sbg_foreach_is_string_source_patch27(source):
         temp = _sbg_fresh_foreach_temp()
         init = VarDecl(temp, Literal(1), True)
@@ -41,10 +41,17 @@ def _sbg_make_for_each(start_token: Token, value_name: str, source: Any, body: L
         update = AssignStmt(temp, "+=", Literal(1))
         value_expr = CallExpr("letter", [source, VarExpr(temp)])
         prefix: List[Any] = []
-        prefix.append(VarDecl(value_name, value_expr, True) if declare_value else AssignStmt(value_name, "=", value_expr))
+        prefix.append(VarDecl(value_name, value_expr, not const_value) if declare_value else AssignStmt(value_name, "=", value_expr))
         out = ForStmt(init, cond, update, [*prefix, *body])
         return _sbg_copy_loc(out, start_token)
-    return _prev_make_for_each_patch27(start_token, value_name, source, body, declare_value=declare_value, index_name=index_name)
+    out = _prev_make_for_each_patch27(start_token, value_name, source, body, declare_value=declare_value, index_name=index_name)
+    # C++ `for (const T v : xs)`: mark the loop-variable declaration immutable so
+    # the p26 const-enforcement pass rejects `v = ...` inside the loop body.
+    if const_value and declare_value:
+        for st in out.body:
+            if isinstance(st, VarDecl) and st.name == value_name:
+                st.mutable = False
+    return out
 
 
 # Clear the parse-time type registry once per parsed source (a new Lexer is

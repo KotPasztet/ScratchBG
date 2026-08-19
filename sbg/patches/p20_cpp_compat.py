@@ -372,12 +372,17 @@ def _parser_parse_for_patch20(self: Parser, start_token: Token) -> ForStmt:
     # for(double x : v) / for(Struct item : row)
     if _parser_try_cpp_type_start_patch20(self):
         try:
-            _parser_skip_cpp_type_patch20(self)
+            typ = _parser_skip_cpp_type_patch20(self)
             name = self.expect_ident()
             if self.match(":"):
                 source = self.parse_expr()
                 self.expect(")")
-                return _sbg_make_for_each(start_token, name, source, self.parse_block(), declare_value=True)
+                # C++: `for (const T v : xs)` / `for (const T& v : xs)` declares a
+                # const loop variable -- assignments to it must be a compile
+                # error (p26 enforcement picks it up via VarDecl(mutable=False)).
+                # NOTE: the active skip-type helper (p21a) joins tokens WITHOUT
+                # spaces ("constint"), so match by prefix, not by split().
+                return _sbg_make_for_each(start_token, name, source, self.parse_block(), declare_value=True, const_value=typ.startswith("const"))
         except ParseError:
             pass
     self.i = saved

@@ -992,12 +992,15 @@ class Parser:
         # for(double x : v) / for(Struct item : row)
         if self._parser_try_cpp_type_start_patch20():
             try:
-                self._parser_skip_cpp_type_patch20()
+                typ = self._parser_skip_cpp_type_patch20()
                 name = self.expect_ident()
                 if self.match(":"):
                     source = self.parse_expr()
                     self.expect(")")
-                    return _sbg_make_for_each(start_token, name, source, self.parse_block(), declare_value=True)
+                    # C++: `for (const T v : xs)` declares a const loop variable —
+                    # p26 enforcement rejects assignments to it.
+                    # (type tokens are joined without spaces: "constint" — prefix match)
+                    return _sbg_make_for_each(start_token, name, source, self.parse_block(), declare_value=True, const_value=typ.startswith("const"))
             except ParseError:
                 pass
         self.i = saved
