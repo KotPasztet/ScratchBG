@@ -6,6 +6,6 @@ __pycache__/
 *.pyc
 compiled/*.sb3
 task/
-BUGS_REPORT.md
 CLINE.md
 PROGRESS.md
+BUGS_REPORT.md
