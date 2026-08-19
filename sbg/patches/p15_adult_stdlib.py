@@ -320,6 +320,18 @@ def _sbg_mangle_locals(program: Program) -> Program:
             return st
         if isinstance(st, ExprStmt):
             st.expr = expr(st.expr, env_stack); return st
+        if isinstance(st, StructVarDecl):
+            # Struct vars themselves stay unmangled (field refs `a.f` are
+            # plain dotted names), but the initializer's *references* (e.g.
+            # `Item b = items.at(1);`) must be renamed like any other expr.
+            if getattr(st, "init", None) is not None:
+                st.init = expr(st.init, env_stack)
+            return st
+        if isinstance(st, LValueAssignStmt):
+            # Same for compound/lvalue targets such as `items.at(1).val = x`.
+            st.target = expr(st.target, env_stack)
+            st.expr = expr(st.expr, env_stack)
+            return st
         if isinstance(st, BlockStmt):
             # Emitted by patch20 lowering (`cin >> a` → BlockStmt of assigns)
             # and by comma-separated declarators (`int a, b;`).

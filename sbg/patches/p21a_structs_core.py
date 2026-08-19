@@ -228,8 +228,9 @@ def _parser_parse_cpp_decl_or_func_patch20(self: Parser, start_token: Token) -> 
 
     if typ in _SBG_STRUCT_DEFS21:
         # `Edge e;` or `Edge e = other;`. Copy construction is represented
-        # as a struct variable declaration plus optional assignment handled later.
-        return self.loc(StructVarDecl(typ, name), start_token)
+        # as a struct variable declaration plus per-field assignments emitted
+        # by patch 25 (see _sbg_expand_struct_var21).
+        return self.loc(StructVarDecl(typ, name, init if _has_real_init21 else None), start_token)
 
     if _sbg_is_vector21(typ):
         if _sbg_is_nested_vector21(typ):

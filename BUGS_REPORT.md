@@ -14,6 +14,12 @@ Posortowane wg powagi, najpierw najgroźniejsze.
 
 ## 🔴 1. KRYTYCZNE: kopiowanie struktury (`Item b = a;`) cicho gubi wartości pól
 
+[NAPRAWIONE 2026-08-19] Patch `sbg/patches/p25_struct_semantics.py`: `Item b = a;`
+oraz `b = a;` (po deklaracji) lowering do kopii pole-po-polu (`b.f = a.f`);
+`Item b = vec.at(i);` / `b = vec.at(i);` do odczytów z list SoA. Dodatkowo
+`sbg/patches/p15_adult_stdlib.py` (mangler) traversuje teraz `StructVarDecl.init`
+oraz `LValueAssignStmt` (referencje w nich są manglowane jak w innych wyrażeniach).
+
 To najpoważniejsze znalezisko. Nie dotyczy jakiegoś edge case'u czy
 zaawansowanej funkcji — dotyczy **podstawowej semantyki `struct`**.
 
@@ -355,6 +361,13 @@ funkcji operujących na jednej, globalnej liście.
 ---
 
 ## 🔴 7. (połączone z pkt. 1) REALNY FIX: kompilator powinien sam auto-lowerować `vector<Struct>.at(idx).field`, zamiast wymagać ręcznego obejścia
+
+[NAPRAWIONE 2026-08-19] Patch `sbg/patches/p25_struct_semantics.py`: zwykły
+(nienested) `vector<Struct>` dostaje automatyczne listy SoA `vec.<field>`;
+`vec.at(i).field` → `item(i, vec.field)` (at 1-based), `vec[i].field` →
+`item(i+1, vec.field)` (0-based), zapis `vec.at(i).field = x` → `setItem`;
+`vec.push_back(structVar)` → per-field `push_back` + marker w liście głównej
+(`size()` działa). Działa w run natywnym i w kompilacji do .sb3.
 
 Poprzednia wersja tego punktu sugerowała "polepszyć komunikat błędu przy
 `dynamic field access cannot be compiled to vanilla Scratch`". Słusznie

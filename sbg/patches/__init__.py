@@ -61,6 +61,7 @@ _PATCH_FILES = [
     "p22_generic_nested_vector.py",
     "p23_terminal_visibility.py",
     "p24_keyboard_input.py",
+    "p25_struct_semantics.py",
 ]
 
 _here = _pathlib.Path(__file__).parent
