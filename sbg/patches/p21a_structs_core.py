@@ -1,6 +1,10 @@
 # data to Program, but method lowering happens during parse, before Program exists.
 _SBG_STRUCT_DEFS21: Dict[str, List[Tuple[str, str]]] = {}
 _SBG_FLAT_VECTOR_TYPES21: Dict[str, str] = {}
+# Parse-time registry of source-level variable types (BUGS_REPORT/todo [6]:
+# foreach needs to know `string w` to iterate characters, not list items).
+# Cleared per-parse by patch p27 (Lexer.__init__ wrapper).
+_SBG_VAR_TYPES21: Dict[str, str] = {}
 
 
 def _sbg_norm_type21(t: str) -> str:
@@ -175,6 +179,8 @@ def _parser_parse_cpp_decl_or_func_patch20(self: Parser, start_token: Token) -> 
         _raw_typ21 = _raw_typ21[len("const"):]
     typ = _sbg_norm_type21(_raw_typ21)
     name = self.expect_ident()
+    if typ:
+        _SBG_VAR_TYPES21[name] = typ
 
     # Function definition or constructor-style variable declaration.
     if self.at("("):
@@ -182,6 +188,11 @@ def _parser_parse_cpp_decl_or_func_patch20(self: Parser, start_token: Token) -> 
         try:
             params = _parser_parse_typed_params_patch20(self)
             ptypes = getattr(self, "_sbg_last_param_types21", {})
+            # Function parameters are visible to foreach loops inside the body
+            # (e.g. `void f(string s) { for (char c : s) ... }`).
+            for _pn, _pt in ptypes.items():
+                if _pt:
+                    _SBG_VAR_TYPES21[_pn] = _pt
             if self.at("{"):
                 body = self.parse_block()
                 if name == "main":

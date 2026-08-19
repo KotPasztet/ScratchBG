@@ -146,6 +146,8 @@ naprawy.
 
 > **[NAPRAWIONE 2026-08-19]** Heurystyka `len()` poprawiona — `len("hello") == 5` w natywnym `sbg run` (zweryfikowane testem; długość zwykłych stringów i wektorów liczona poprawnie).
 
+> **[NAPRAWIONE 2026-08-19 — kontynuacja, todo [6]]** Ta sama rodzina niespójności dotykała pętli for-each po stringu: `for (char c : s)` loweringował się przez `item(s, i)`, które na stringach przechodzi przez maszynerię "encoded rows" (tokenizacja jak wyżej) — `for (char c : "abc")` dawało `abc00` (5 iteracji). Patch `sbg/patches/p27_foreach_semantics.py` + rejestr typów `_SBG_VAR_TYPES21` w `p21a_structs_core.py` loweringują teraz pętlę po stringu przez `letter(s, i)` (znaki, zgodnie z `len()`). Wcześniej to samo naprawiono w `p21c` dla `len`/`size` (patrz `_runtime_call_patch21n`).
+
 ### Macierz reprodukcji
 | zawartość stringu | oczekiwana długość | zwrócona `len()` |
 |---|---|---|

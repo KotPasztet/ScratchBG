@@ -63,6 +63,7 @@ _PATCH_FILES = [
     "p24_keyboard_input.py",
     "p25_struct_semantics.py",
     "p26_const_enforcement.py",
+    "p27_foreach_semantics.py",
 ]
 
 _here = _pathlib.Path(__file__).parent
